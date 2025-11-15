@@ -1,0 +1,54 @@
+name: Render Notebooks to HTML
+
+on:
+  push:
+    paths:
+      - '**.ipynb'
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to commit rendered files
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get full history for proper git operations
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install nbconvert jupyter nbformat
+
+      - name: Create rendered directory
+        run: mkdir -p rendered
+
+      - name: Convert notebooks to HTML
+        run: |
+          for notebook in *.ipynb; do
+            if [ -f "$notebook" ]; then
+              echo "Converting $notebook to HTML..."
+              jupyter nbconvert --to html \
+                --output-dir rendered \
+                --ExecutePreprocessor.enabled=False \
+                "$notebook"
+            fi
+          done
+
+      - name: Commit rendered HTML files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-render notebooks to HTML [skip ci]"
+          file_pattern: 'rendered/*.html'
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
