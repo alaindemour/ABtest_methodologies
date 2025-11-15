@@ -2,28 +2,37 @@
 
 A/B testing methodologies and statistical frameworks.
 
-## Notebook Rendering
+## 📖 View Rendered Notebooks
 
-This repository uses `nbstripout` to keep notebook files clean in version control (outputs and metadata are stripped before committing). To view rendered versions of the notebooks with outputs:
+**[View all rendered notebooks on GitHub Pages →](https://alaindemour.github.io/ABtest_methodologies/)**
+
+This repository uses `nbstripout` to keep notebook source files clean in version control (outputs and metadata are stripped before committing). Fully rendered versions with all outputs are automatically published to GitHub Pages.
+
+### How It Works
+
+1. **Local Development:** Edit notebooks in Jupyter with full outputs visible
+2. **Commit:** Push to main - `nbstripout` automatically strips outputs before committing
+3. **Auto-Render:** GitHub Actions converts notebooks to HTML and publishes to GitHub Pages
+4. **View:** Anyone can view the rendered notebooks at the GitHub Pages URL
 
 ### Automated Rendering
 
-A GitHub Actions workflow automatically converts notebooks to HTML whenever changes are pushed to the main branch:
+A GitHub Actions workflow automatically converts notebooks to HTML whenever changes are pushed to main:
 
-- **Rendered files location:** `rendered/` directory
+- **Published to:** GitHub Pages (`gh-pages` branch)
+- **URL:** `https://alaindemour.github.io/ABtest_methodologies/`
 - **Trigger:** Automatic on push to main/master when `.ipynb` files change
 - **Manual trigger:** Go to Actions tab → "Render Notebooks to HTML" → Run workflow
 
-### Viewing Rendered Notebooks
+### Direct Notebook Links
 
-After the workflow runs, you can view the HTML files:
-1. Browse to the `rendered/` directory in the repository
-2. Click on any `.html` file
-3. Click "Download" or use GitHub's HTML preview
+Once published, notebooks can be accessed at:
+- `https://alaindemour.github.io/ABtest_methodologies/ABmethodologies.html`
+- Add more notebook links as you create them
 
-### Local Rendering
+### Local Rendering (Optional)
 
-To generate HTML versions locally:
+To generate HTML versions locally for testing:
 
 ```bash
 # Install dependencies
@@ -38,4 +47,4 @@ jupyter nbconvert --to html --output-dir rendered ABmethodologies.ipynb
 
 ### About nbstripout
 
-The `.gitattributes` file configures Git to automatically strip outputs and metadata from notebooks before committing. This keeps the repository clean and reduces merge conflicts, while the automated workflow ensures rendered versions are always available.
+The `.gitattributes` file configures Git to automatically strip outputs and metadata from notebooks before committing. This keeps the repository clean and reduces merge conflicts, while the automated workflow ensures rendered versions are always available on GitHub Pages.

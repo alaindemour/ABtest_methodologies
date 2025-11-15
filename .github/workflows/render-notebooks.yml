@@ -13,13 +13,11 @@ jobs:
   render:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required to commit rendered files
+      contents: write  # Required to push to gh-pages
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Get full history for proper git operations
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -30,7 +28,7 @@ jobs:
         run: |
           pip install nbconvert jupyter nbformat
 
-      - name: Create rendered directory
+      - name: Create output directory
         run: mkdir -p rendered
 
       - name: Convert notebooks to HTML
@@ -45,10 +43,111 @@ jobs:
             fi
           done
 
-      - name: Commit rendered HTML files
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Generate index page
+        run: |
+          cat > rendered/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>ABtest Methodologies - Rendered Notebooks</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                      max-width: 900px;
+                      margin: 0 auto;
+                      padding: 40px 20px;
+                      line-height: 1.6;
+                      background-color: #f5f5f5;
+                  }
+                  .container {
+                      background: white;
+                      padding: 40px;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                  }
+                  h1 {
+                      color: #333;
+                      border-bottom: 3px solid #0366d6;
+                      padding-bottom: 10px;
+                  }
+                  .description {
+                      color: #666;
+                      margin-bottom: 30px;
+                  }
+                  .notebooks {
+                      list-style: none;
+                      padding: 0;
+                  }
+                  .notebooks li {
+                      margin: 15px 0;
+                      padding: 15px;
+                      background: #f6f8fa;
+                      border-radius: 6px;
+                      border-left: 4px solid #0366d6;
+                  }
+                  .notebooks a {
+                      color: #0366d6;
+                      text-decoration: none;
+                      font-weight: 500;
+                      font-size: 1.1em;
+                  }
+                  .notebooks a:hover {
+                      text-decoration: underline;
+                  }
+                  .footer {
+                      margin-top: 40px;
+                      padding-top: 20px;
+                      border-top: 1px solid #e1e4e8;
+                      color: #666;
+                      font-size: 0.9em;
+                  }
+                  .footer a {
+                      color: #0366d6;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>📊 A/B Test Methodologies</h1>
+                  <p class="description">
+                      Rendered Jupyter notebooks exploring A/B testing methodologies and statistical frameworks.
+                      These notebooks are automatically generated from the latest version in the repository.
+                  </p>
+                  <h2>Available Notebooks</h2>
+                  <ul class="notebooks">
+          EOF
+
+          # Add links for each HTML file
+          for html in rendered/*.html; do
+            if [ -f "$html" ] && [ "$(basename "$html")" != "index.html" ]; then
+              filename=$(basename "$html")
+              displayname="${filename%.html}"
+              echo "          <li><a href=\"$filename\">$displayname</a></li>" >> rendered/index.html
+            fi
+          done
+
+          cat >> rendered/index.html << 'EOF'
+                  </ul>
+                  <div class="footer">
+                      <p>
+                          📁 <a href="https://github.com/${{ github.repository }}">View Source Repository</a><br>
+                          🔄 Last updated: <span id="date"></span>
+                      </p>
+                  </div>
+              </div>
+              <script>
+                  document.getElementById('date').textContent = new Date().toLocaleString();
+              </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          commit_message: "Auto-render notebooks to HTML [skip ci]"
-          file_pattern: 'rendered/*.html'
-          commit_user_name: github-actions[bot]
-          commit_user_email: github-actions[bot]@users.noreply.github.com
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./rendered
+          publish_branch: gh-pages
+          force_orphan: true
