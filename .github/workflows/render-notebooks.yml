@@ -26,19 +26,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install nbconvert jupyter nbformat
+          pip install nbconvert jupyter nbformat numpy matplotlib scipy statsmodels
 
       - name: Create output directory
         run: mkdir -p rendered
 
-      - name: Convert notebooks to HTML
+      - name: Convert notebooks to HTML (with execution)
         run: |
           for notebook in *.ipynb; do
             if [ -f "$notebook" ]; then
-              echo "Converting $notebook to HTML..."
+              echo "Converting and executing $notebook..."
               jupyter nbconvert --to html \
                 --output-dir rendered \
-                --ExecutePreprocessor.enabled=False \
+                --execute \
+                --ExecutePreprocessor.timeout=600 \
                 "$notebook"
             fi
           done
