@@ -383,3 +383,106 @@ def plot_prior_vs_posterior(alpha, beta_param, control_group_conversion_rate,
     plt.tight_layout()
 
     return fig, ax
+
+
+def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_posterior,
+                                                beta_posterior, threshold, figsize=(10, 6)):
+    """
+    Plot informative prior vs posterior with non-inferiority tail areas.
+
+    This function visualizes both a weakly-informative prior and the posterior
+    distribution, highlighting the tail areas above the non-inferiority threshold.
+    This is useful for demonstrating how data updates beliefs in a Bayesian framework.
+
+    Parameters
+    ----------
+    alpha_prior : float
+        Alpha parameter of the prior Beta distribution
+    beta_prior : float
+        Beta parameter of the prior Beta distribution
+    alpha_posterior : float
+        Alpha parameter of the posterior Beta distribution
+    beta_posterior : float
+        Beta parameter of the posterior Beta distribution
+    threshold : float
+        The non-inferiority boundary (typically control_rate - epsilon)
+    figsize : tuple, optional
+        Figure size as (width, height). Default is (10, 6)
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object
+    ax : matplotlib.axes.Axes
+        The axes object
+    prob_non_inferior_post : float
+        Posterior probability above threshold
+    prob_non_inferior_prior : float
+        Prior probability above threshold
+
+    Notes
+    -----
+    The function plots:
+    - Prior distribution as a dashed blue line
+    - Posterior distribution as a solid red line
+    - Non-inferiority boundary (vertical dotted line)
+    - Shaded posterior tail area (red, darker)
+    - Shaded prior tail area (blue, lighter)
+    - Both probabilities are also returned for further use
+
+    The plot range is automatically adjusted to focus on the relevant region
+    around the threshold.
+
+    Examples
+    --------
+    >>> fig, ax, post_prob, prior_prob = plot_informative_prior_posterior_comparison(
+    ...     alpha_prior=20, beta_prior=80, alpha_posterior=53, beta_posterior=197,
+    ...     threshold=0.17
+    ... )
+    >>> print(f"Posterior P(p_A > threshold) = {post_prob:.4f}")
+    >>> plt.show()
+    """
+    # Compute probabilities (posterior and prior) for reference
+    prob_non_inferior_post = beta_dist.sf(threshold, alpha_posterior, beta_posterior)
+    prob_non_inferior_prior = beta_dist.sf(threshold, alpha_prior, beta_prior)
+
+    # Plot range focused around the relevant region
+    x_min = max(0.0, threshold - 0.12)
+    x_max = min(1.0, threshold + 0.28)
+    x_range = np.linspace(x_min, x_max, 1200)
+
+    prior_pdf = beta_dist.pdf(x_range, alpha_prior, beta_prior)
+    post_pdf = beta_dist.pdf(x_range, alpha_posterior, beta_posterior)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Curves
+    ax.plot(x_range, prior_pdf, color="#1f77b4", lw=2, ls="--",
+            label=f"Prior Beta({alpha_prior:.2f}, {beta_prior:.2f})")
+    ax.plot(x_range, post_pdf, color="#d62728", lw=2.5,
+            label=f"Posterior Beta({alpha_posterior:.2f}, {beta_posterior:.2f})")
+
+    # Non-inferiority boundary
+    ax.axvline(threshold, color="k", ls=":", lw=1.8,
+               label=f"Non-inferiority boundary = {threshold:.2f}")
+
+    # Shade posterior tail (non-inferiority probability)
+    mask_post = x_range >= threshold
+    ax.fill_between(x_range[mask_post], post_pdf[mask_post], color="#d62728", alpha=0.3,
+                    label=f"Posterior tail area = {prob_non_inferior_post:.3f}")
+
+    # Optional: shade prior tail for comparison (lighter)
+    mask_prior = x_range >= threshold
+    ax.fill_between(x_range[mask_prior], prior_pdf[mask_prior], color="#1f77b4", alpha=0.15,
+                    label=f"Prior tail area = {prob_non_inferior_prior:.3f}")
+
+    # Decorations
+    ax.set_xlim(x_min, x_max)
+    ax.set_xlabel("Conversion rate p_A", fontsize=12)
+    ax.set_ylabel("Density", fontsize=12)
+    ax.set_title("Prior vs Posterior and Non-Inferiority Probability (tail area)", fontsize=14)
+    ax.grid(True, ls=":", alpha=0.5)
+    ax.legend(loc="best", fontsize=10)
+    plt.tight_layout()
+
+    return fig, ax, prob_non_inferior_post, prob_non_inferior_prior
