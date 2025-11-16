@@ -486,3 +486,113 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     plt.tight_layout()
 
     return fig, ax, prob_non_inferior_post, prob_non_inferior_prior
+
+
+def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rate, epsilon,
+                                       colors=None, x_range=None, figsize=(12, 6)):
+    """
+    Plot multiple posterior distributions for variant comparison.
+
+    This function visualizes posterior Beta distributions for multiple variants,
+    showing their PDFs, means, credible intervals, and reference boundaries.
+    Useful for comparing multiple test variants against a control.
+
+    Parameters
+    ----------
+    posteriors : dict
+        Dictionary with variant names as keys, each containing:
+        - 'alpha': float, alpha parameter of posterior Beta distribution
+        - 'beta': float, beta parameter of posterior Beta distribution
+        - 'mean': float, posterior mean
+        - 'ci_95': tuple of (lower, upper) bounds of 95% credible interval
+    control_group_conversion_rate : float
+        The conversion rate of the control group
+    epsilon : float
+        The non-inferiority margin (positive value)
+    colors : dict, optional
+        Dictionary mapping variant names to color codes.
+        If None, uses default colors for 'A', 'B', 'C'
+    x_range : array-like, optional
+        X-axis range for plotting. If None, uses np.linspace(0.15, 0.30, 1000)
+    figsize : tuple, optional
+        Figure size as (width, height). Default is (12, 6)
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object
+    ax : matplotlib.axes.Axes
+        The axes object
+
+    Notes
+    -----
+    The function plots for each variant:
+    - PDF curve (solid line)
+    - Mean (dashed vertical line)
+    - 95% credible interval (shaded region)
+
+    Additionally shows:
+    - Non-inferiority boundary (red dotted line)
+    - Control group conversion rate (black dotted line)
+
+    Examples
+    --------
+    >>> posteriors = {
+    ...     'A': {'alpha': 169, 'beta': 633, 'mean': 0.2107, 'ci_95': (0.183, 0.240)},
+    ...     'B': {'alpha': 173, 'beta': 629, 'mean': 0.2157, 'ci_95': (0.187, 0.245)},
+    ...     'C': {'alpha': 166, 'beta': 636, 'mean': 0.2069, 'ci_95': (0.179, 0.236)}
+    ... }
+    >>> fig, ax = plot_multiple_posteriors_comparison(
+    ...     posteriors, control_group_conversion_rate=0.2, epsilon=0.03
+    ... )
+    >>> plt.show()
+    """
+    # Default colors if not provided
+    if colors is None:
+        colors = {'A': '#1f77b4', 'B': '#ff7f0e', 'C': '#2ca02c'}
+
+    # Default x_range if not provided
+    if x_range is None:
+        x_range = np.linspace(0.15, 0.30, 1000)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Plot each variant
+    for name in sorted(posteriors.keys()):
+        alpha_p = posteriors[name]['alpha']
+        beta_p = posteriors[name]['beta']
+        mean_p = posteriors[name]['mean']
+        ci_lower, ci_upper = posteriors[name]['ci_95']
+
+        # Get color (use default if variant not in colors dict)
+        color = colors.get(name, f'C{hash(name) % 10}')
+
+        # Plot PDF
+        pdf = beta_dist.pdf(x_range, alpha_p, beta_p)
+        ax.plot(x_range, pdf, color=color, lw=2.5,
+                label=f'{name}: mean={mean_p:.4f}')
+
+        # Mark the mean
+        ax.axvline(mean_p, color=color, ls='--', lw=1, alpha=0.5)
+
+        # Shade 95% credible interval
+        mask = (x_range >= ci_lower) & (x_range <= ci_upper)
+        ax.fill_between(x_range[mask], pdf[mask], alpha=0.2, color=color)
+
+    # Add non-inferiority boundary
+    boundary = control_group_conversion_rate - epsilon
+    ax.axvline(boundary, color='red', ls=':', lw=2,
+               label=f'Non-inferiority boundary ({boundary:.2f})')
+
+    # Add control rate
+    ax.axvline(control_group_conversion_rate, color='black', ls=':', lw=2,
+               label=f'Control rate ({control_group_conversion_rate:.2f})')
+
+    ax.set_xlabel('Conversion Rate', fontsize=12)
+    ax.set_ylabel('Posterior Density', fontsize=12)
+    ax.set_title('Posterior Distributions for Variants A, B, C', fontsize=14, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
+    ax.grid(True, ls=':', alpha=0.3)
+    plt.tight_layout()
+
+    return fig, ax
