@@ -6,14 +6,6 @@ A/B testing methodologies and statistical frameworks.
 
 **[View all rendered notebooks on GitHub Pages →](https://alaindemour.github.io/ABtest_methodologies/)**
 
-This repository uses `nbstripout` to keep notebook source files clean in version control (outputs and metadata are stripped before committing). Fully rendered versions with all outputs are automatically published to GitHub Pages.
-
-### How It Works
-
-1. **Local Development:** Edit notebooks in Jupyter with full outputs visible
-2. **Commit:** Push to main - `nbstripout` automatically strips outputs before committing
-3. **Auto-Render:** GitHub Actions converts notebooks to HTML and publishes to GitHub Pages
-4. **View:** Anyone can view the rendered notebooks at the GitHub Pages URL
 
 ### Automated Rendering
 
@@ -44,7 +36,3 @@ jupyter nbconvert --to html --output-dir rendered *.ipynb
 # Render a specific notebook
 jupyter nbconvert --to html --output-dir rendered ABmethodologies.ipynb
 ```
-
-### About nbstripout
-
-The `.gitattributes` file configures Git to automatically strip outputs and metadata from notebooks before committing. This keeps the repository clean and reduces merge conflicts, while the automated workflow ensures rendered versions are always available on GitHub Pages.
