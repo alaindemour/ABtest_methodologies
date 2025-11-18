@@ -352,7 +352,12 @@ def plot_prior_vs_posterior(alpha, beta_param, control_group_conversion_rate,
     ... )
     >>> plt.show()
     """
-    x_range = np.linspace(0, 0.5, 1000)
+    # Auto-calculate x-range based on credible interval with padding
+    boundary = control_group_conversion_rate - epsilon
+    x_min = max(0.0, min(p_L, boundary) - 0.05)
+    x_max = min(1.0, max(p_U, control_group_conversion_rate) + 0.05)
+
+    x_range = np.linspace(x_min, x_max, 1000)
     prior_noninformative_pdf = beta_dist.pdf(x_range, 1, 1)  # Beta(1,1) - uniform
     posterior_noninformative_pdf = beta_dist.pdf(x_range, alpha, beta_param)
 
@@ -551,9 +556,18 @@ def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rat
     if colors is None:
         colors = {'A': '#1f77b4', 'B': '#ff7f0e', 'C': '#2ca02c'}
 
-    # Default x_range if not provided
+    # Auto-calculate x_range if not provided
     if x_range is None:
-        x_range = np.linspace(0.15, 0.30, 1000)
+        # Find min and max across all credible intervals
+        all_ci_lower = [posteriors[name]['ci_95'][0] for name in posteriors.keys()]
+        all_ci_upper = [posteriors[name]['ci_95'][1] for name in posteriors.keys()]
+        boundary = control_group_conversion_rate - epsilon
+
+        # Include boundary and control rate in the range calculation
+        x_min = max(0.0, min(min(all_ci_lower), boundary) - 0.05)
+        x_max = min(1.0, max(max(all_ci_upper), control_group_conversion_rate) + 0.05)
+
+        x_range = np.linspace(x_min, x_max, 1000)
 
     fig, ax = plt.subplots(figsize=figsize)
 
