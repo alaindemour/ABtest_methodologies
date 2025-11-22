@@ -114,3 +114,97 @@ def nhst_non_inferiority_test(n_control, x_control, n_variant, x_variant,
         'variant_rate': p_variant,
         'z_statistic': z_statistic
     }
+
+
+def compute_sample_size_non_inferiority(p_control, epsilon, alpha=0.05, target_power=0.80,
+                                         h1_effect_size=0.0, allocation_ratio=1.0):
+    """
+    Compute required sample size for non-inferiority test to achieve target power.
+
+    Parameters:
+    -----------
+    p_control : float
+        Expected conversion rate in control group (e.g., 0.20 for 20%)
+    epsilon : float
+        Non-inferiority margin (e.g., 0.03 for 3% acceptable degradation)
+    alpha : float, optional
+        Significance level (default: 0.05)
+    target_power : float, optional
+        Target power (default: 0.80 for 80%)
+    h1_effect_size : float, optional
+        Assumed true difference under H1 (default: 0.0, meaning no difference)
+    allocation_ratio : float, optional
+        Ratio of variant to control (default: 1.0 for equal allocation)
+        E.g., 0.5 means variant gets half the sample size of control
+
+    Returns:
+    --------
+    dict : Dictionary containing:
+        - 'n_control': Required sample size for control group
+        - 'n_variant': Required sample size for variant group
+        - 'n_total': Total sample size needed
+        - 'power_achieved': Verification of achieved power with these sample sizes
+
+    Notes:
+    ------
+    Formula derived from:
+    Power = 1 - Φ((c - δ) / SE_H1)
+    where c = -ε + z_(1-α) × SE_H0
+
+    Solving for n when SE = √[p(1-p) × (1/n_variant + 1/n_control)]
+    """
+    # Z-scores for alpha and power
+    z_alpha = norm.ppf(1 - alpha)  # 1.645 for α=0.05 (one-sided)
+    z_beta = norm.ppf(target_power)  # 0.842 for power=0.80
+
+    # Estimate variance under H1 (pooled, assuming effect size)
+    # For h1_effect_size=0: p_variant = p_control
+    p_variant_h1 = p_control + h1_effect_size
+
+    # Pooled estimate under H1
+    if h1_effect_size == 0.0:
+        p_pooled = p_control
+    else:
+        # Weighted average (not quite right for unequal n, but close enough)
+        p_pooled = (p_control + p_variant_h1) / 2
+
+    # Standard formula for non-inferiority sample size
+    # Derived from: SE × (z_alpha + z_beta) = epsilon - h1_effect_size
+    # Where SE = √[p(1-p) × (1/n_variant + 1/n_control)]
+
+    # Let n_control = n and n_variant = r×n where r = allocation_ratio
+    # SE = √[p(1-p) × (1/(r×n) + 1/n)] = √[p(1-p) × (1+r)/(r×n)]
+
+    # Solving: √[p(1-p) × (1+r)/(r×n)] = (epsilon - h1_effect_size) / (z_alpha + z_beta)
+
+    # n = p(1-p) × (1+r)/r × (z_alpha + z_beta)² / (epsilon - h1_effect_size)²
+
+    numerator = p_pooled * (1 - p_pooled) * (1 + allocation_ratio) / allocation_ratio
+    denominator = ((epsilon - h1_effect_size) / (z_alpha + z_beta)) ** 2
+
+    n_control = numerator / denominator
+    n_variant = allocation_ratio * n_control
+    n_total = n_control + n_variant
+
+    # Round up to nearest integer
+    n_control = int(np.ceil(n_control))
+    n_variant = int(np.ceil(n_variant))
+    n_total = n_control + n_variant
+
+    # Verify by computing achieved power with these sample sizes
+    se_h1_achieved = np.sqrt(p_pooled * (1 - p_pooled) * (1/n_variant + 1/n_control))
+    se_h0_achieved = np.sqrt((p_control * (1-p_control) / n_control) +
+                             (p_variant_h1 * (1-p_variant_h1) / n_variant))
+
+    critical_value = -epsilon + z_alpha * se_h0_achieved
+    power_achieved = norm.sf(critical_value, loc=h1_effect_size, scale=se_h1_achieved)
+
+    return {
+        'n_control': n_control,
+        'n_variant': n_variant,
+        'n_total': n_total,
+        'power_achieved': power_achieved,
+        'allocation_ratio': allocation_ratio,
+        'z_alpha': z_alpha,
+        'z_beta': z_beta
+    }
