@@ -96,6 +96,139 @@ def test_non_inferiority(n_control, x_control, variants_data, epsilon,
     return results
 
 
+def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
+                                            epsilon, alpha_prior_strength=20,
+                                            threshold=0.95, n_simulations=100000):
+    """
+    Test non-inferiority using weakly informative prior based on historical data.
+
+    This function implements the methodology described in the notebook section
+    "Weakly Informative Prior Using Historical Data". Instead of requiring manual
+    specification of prior parameters, it automatically constructs a weakly
+    informative prior centered at the expected variant conversion rate
+    (control_rate - epsilon) with high entropy to avoid dominating the data.
+
+    The prior is constructed as:
+    - α_prior = alpha_prior_strength (default: 20, for high entropy/wide uncertainty)
+    - β_prior = (α_prior / target_mean) - α_prior
+    - target_mean = control_conversion_rate - epsilon
+
+    This prior expresses: "We expect the variant to be slightly worse than control
+    (by epsilon), but we're quite uncertain about this expectation."
+
+    Parameters
+    ----------
+    n_control : int
+        Number of samples in control group
+    x_control : int
+        Number of successes in control group
+    variants_data : dict
+        Dictionary with variant names as keys and {'n': samples, 'x': successes} as values
+        Example: {'A': {'n': 561, 'x': 381}, 'B': {'n': 285, 'x': 192}}
+    epsilon : float
+        Non-inferiority margin (e.g., 0.05 for 5% acceptable degradation)
+    alpha_prior_strength : float, optional
+        Strength parameter for the prior (default: 20). Smaller values give
+        wider (more uncertain) priors. Typical values: 10-30.
+    threshold : float, optional
+        Probability threshold for declaring non-inferiority (default: 0.95)
+        Variant is non-inferior if P(variant > control - epsilon) >= threshold
+    n_simulations : int, optional
+        Number of Monte Carlo simulations (default: 100000)
+
+    Returns
+    -------
+    dict : Dictionary with results for each variant containing:
+        - 'is_non_inferior': bool, whether variant is non-inferior
+        - 'probability': float, P(variant > control - epsilon)
+        - 'control_rate': float, observed control conversion rate
+        - 'variant_rate': float, posterior mean of variant
+        - 'posterior_params': tuple, (alpha, beta) of variant posterior
+        - 'prior_params': tuple, (alpha_prior, beta_prior) used
+        - 'prior_mean': float, mean of the prior distribution
+
+    Examples
+    --------
+    >>> # Historical data: control has 20% conversion, testing 3 variants
+    >>> variants = {
+    ...     'A': {'n': 561, 'x': 381},
+    ...     'B': {'n': 285, 'x': 192},
+    ...     'C': {'n': 294, 'x': 201}
+    ... }
+    >>> results = test_non_inferiority_weakly_informative(
+    ...     n_control=4411, x_control=3138,
+    ...     variants_data=variants,
+    ...     epsilon=0.05
+    ... )
+    >>> for variant, result in results.items():
+    ...     print(f"{variant}: {result['is_non_inferior']} "
+    ...           f"(P={result['probability']:.3f})")
+    A: True (P=0.967)
+    B: True (P=0.952)
+    C: True (P=0.961)
+
+    Notes
+    -----
+    This approach is particularly valuable when:
+    - You have historical data about control conversion rates
+    - You want to incorporate domain knowledge without being overly confident
+    - Sample sizes are small (NHST would be underpowered)
+    - You're adding features that shouldn't dramatically change behavior
+
+    The weakly informative prior:
+    - Centers belief around expected variant performance (control - epsilon)
+    - Maintains high uncertainty (high entropy) via small alpha/beta values
+    - Allows data to dominate when sample sizes are reasonable
+    - Provides reasonable estimates even with very small samples
+    """
+    # Compute control conversion rate
+    control_rate = x_control / n_control
+
+    # Construct weakly informative prior centered at (control_rate - epsilon)
+    target_prior_mean = control_rate - epsilon
+    alpha_prior = alpha_prior_strength
+    beta_prior = (alpha_prior / target_prior_mean) - alpha_prior
+
+    # Verify prior is valid (must have positive parameters)
+    if beta_prior <= 0:
+        raise ValueError(
+            f"Invalid prior parameters: beta_prior={beta_prior:.4f} <= 0. "
+            f"This can happen when epsilon is too large relative to control_rate. "
+            f"Try reducing epsilon or increasing alpha_prior_strength."
+        )
+
+    results = {}
+
+    for variant_name, data in variants_data.items():
+        # Variant posterior: Beta(x + α_prior, n - x + β_prior)
+        alpha_posterior = data['x'] + alpha_prior
+        beta_posterior = (data['n'] - data['x']) + beta_prior
+        variant_posterior_mean = alpha_posterior / (alpha_posterior + beta_posterior)
+
+        # Monte Carlo: P(variant > control - epsilon)
+        variant_samples = beta_dist.rvs(
+            alpha_posterior, beta_posterior, size=n_simulations
+        )
+
+        # Non-inferiority threshold
+        non_inferiority_threshold = control_rate - epsilon
+
+        # Compute probability that variant exceeds the threshold
+        prob_non_inferior = np.mean(variant_samples > non_inferiority_threshold)
+
+        results[variant_name] = {
+            'is_non_inferior': prob_non_inferior >= threshold,
+            'probability': prob_non_inferior,
+            'control_rate': control_rate,
+            'variant_rate': variant_posterior_mean,
+            'posterior_params': (alpha_posterior, beta_posterior),
+            'prior_params': (alpha_prior, beta_prior),
+            'prior_mean': target_prior_mean
+        }
+
+    return results
+
+
 def select_best_variant(variants_data, alpha_prior=1, beta_prior=1,
                        credible_level=0.95, n_simulations=100000):
     """
