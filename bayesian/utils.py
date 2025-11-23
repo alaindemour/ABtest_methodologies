@@ -98,7 +98,7 @@ def test_non_inferiority(n_control, x_control, variants_data, epsilon,
 
 def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
                                             epsilon, alpha_prior_strength=20,
-                                            threshold=0.95, n_simulations=100000):
+                                            threshold=0.95):
     """
     Test non-inferiority using weakly informative prior based on historical data.
 
@@ -133,8 +133,6 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
     threshold : float, optional
         Probability threshold for declaring non-inferiority (default: 0.95)
         Variant is non-inferior if P(variant > control - epsilon) >= threshold
-    n_simulations : int, optional
-        Number of Monte Carlo simulations (default: 100000)
 
     Returns
     -------
@@ -205,16 +203,16 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
         beta_posterior = (data['n'] - data['x']) + beta_prior
         variant_posterior_mean = alpha_posterior / (alpha_posterior + beta_posterior)
 
-        # Monte Carlo: P(variant > control - epsilon)
-        variant_samples = beta_dist.rvs(
-            alpha_posterior, beta_posterior, size=n_simulations
-        )
-
         # Non-inferiority threshold
         non_inferiority_threshold = control_rate - epsilon
 
-        # Compute probability that variant exceeds the threshold
-        prob_non_inferior = np.mean(variant_samples > non_inferiority_threshold)
+        # Direct calculation: P(variant > threshold) using Beta CDF
+        # P(X > threshold) = 1 - P(X <= threshold) = 1 - CDF(threshold)
+        prob_non_inferior = 1 - beta_dist.cdf(
+            non_inferiority_threshold,
+            alpha_posterior,
+            beta_posterior
+        )
 
         results[variant_name] = {
             'is_non_inferior': prob_non_inferior >= threshold,
