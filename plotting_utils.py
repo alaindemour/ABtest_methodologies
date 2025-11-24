@@ -493,6 +493,174 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     return fig, ax, prob_non_inferior_post, prob_non_inferior_prior
 
 
+def plot_weakly_informative_prior_with_variants(alpha_prior, beta_prior, variants_posteriors,
+                                                 threshold, control_rate=None, epsilon=None,
+                                                 colors=None, figsize=(12, 7)):
+    """
+    Plot weakly informative prior and all variant posteriors on the same figure.
+
+    This function visualizes a common weakly informative prior alongside all variant
+    posterior distributions, showing how data updates beliefs for each variant.
+    Useful for comparing how different variants respond to the same prior.
+
+    Parameters
+    ----------
+    alpha_prior : float
+        Alpha parameter of the prior Beta distribution (common to all variants)
+    beta_prior : float
+        Beta parameter of the prior Beta distribution (common to all variants)
+    variants_posteriors : dict
+        Dictionary with variant names as keys, each containing:
+        - 'alpha': float, alpha parameter of posterior Beta distribution
+        - 'beta': float, beta parameter of posterior Beta distribution
+        - 'n': int, sample size
+        - 'x': int, number of successes
+    threshold : float
+        The non-inferiority boundary (typically control_rate - epsilon)
+    control_rate : float, optional
+        The control group conversion rate (for reference line)
+    epsilon : float, optional
+        The non-inferiority margin (for reference)
+    colors : dict, optional
+        Dictionary mapping variant names to color codes.
+        If None, uses default colors
+    figsize : tuple, optional
+        Figure size as (width, height). Default is (12, 7)
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object
+    ax : matplotlib.axes.Axes
+        The axes object
+
+    Notes
+    -----
+    The function plots:
+    - Prior distribution (thick dashed gray line)
+    - Each variant's posterior (solid colored lines)
+    - Non-inferiority threshold (red dotted line)
+    - Control rate if provided (black dotted line)
+    - Posterior tail probabilities above threshold
+
+    Examples
+    --------
+    >>> variants_post = {
+    ...     'A': {'alpha': 401, 'beta': 190, 'n': 561, 'x': 381},
+    ...     'B': {'alpha': 212, 'beta': 103, 'n': 285, 'x': 192},
+    ...     'C': {'alpha': 221, 'beta': 103, 'n': 294, 'x': 201}
+    ... }
+    >>> fig, ax = plot_weakly_informative_prior_with_variants(
+    ...     alpha_prior=20, beta_prior=10.24,
+    ...     variants_posteriors=variants_post,
+    ...     threshold=0.66, control_rate=0.71, epsilon=0.05
+    ... )
+    >>> plt.show()
+    """
+    # Default colors if not provided
+    if colors is None:
+        colors = {'A': '#1f77b4', 'B': '#ff7f0e', 'C': '#2ca02c'}
+
+    # Calculate prior mean and probability
+    prior_mean = alpha_prior / (alpha_prior + beta_prior)
+    prob_prior = 1 - beta_dist.cdf(threshold, alpha_prior, beta_prior)
+
+    # Determine x-axis range
+    x_min = max(0.0, threshold - 0.10)
+    x_max = min(1.0, threshold + 0.20)
+    if control_rate is not None:
+        x_max = min(1.0, max(x_max, control_rate + 0.05))
+    x_range = np.linspace(x_min, x_max, 1200)
+
+    # Create plot
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Plot prior
+    prior_pdf = beta_dist.pdf(x_range, alpha_prior, beta_prior)
+    ax.plot(x_range, prior_pdf, color='gray', lw=3, ls='--', alpha=0.8,
+            label=f'Prior: Beta(α={alpha_prior:.1f}, β={beta_prior:.1f}), mean={prior_mean:.3f}')
+
+    # Shade prior tail area
+    mask_prior = x_range >= threshold
+    ax.fill_between(x_range[mask_prior], prior_pdf[mask_prior],
+                    color='gray', alpha=0.1,
+                    label=f'Prior P(>threshold) = {prob_prior:.3f}')
+
+    # Plot each variant's posterior
+    variant_stats = []
+    for name in sorted(variants_posteriors.keys()):
+        data = variants_posteriors[name]
+        alpha_post = data['alpha']
+        beta_post = data['beta']
+        n = data.get('n', 0)
+        x = data.get('x', 0)
+
+        # Calculate statistics
+        post_mean = alpha_post / (alpha_post + beta_post)
+        obs_rate = x / n if n > 0 else 0
+        prob_non_inferior = 1 - beta_dist.cdf(threshold, alpha_post, beta_post)
+
+        # Get color
+        color = colors.get(name, f'C{hash(name) % 10}')
+
+        # Plot posterior PDF
+        post_pdf = beta_dist.pdf(x_range, alpha_post, beta_post)
+        ax.plot(x_range, post_pdf, color=color, lw=2.5,
+                label=f'{name}: n={n}, x={x} (obs={obs_rate:.3f})')
+
+        # Mark posterior mean
+        ax.axvline(post_mean, color=color, ls=':', lw=1.2, alpha=0.6)
+
+        # Shade tail area for this variant
+        mask_post = x_range >= threshold
+        ax.fill_between(x_range[mask_post], post_pdf[mask_post],
+                       color=color, alpha=0.15)
+
+        variant_stats.append({
+            'name': name,
+            'post_mean': post_mean,
+            'prob': prob_non_inferior,
+            'n': n,
+            'x': x
+        })
+
+    # Add threshold line
+    ax.axvline(threshold, color='red', ls=':', lw=2.5,
+              label=f'Non-inferiority threshold = {threshold:.3f}')
+
+    # Add control rate line if provided
+    if control_rate is not None:
+        ax.axvline(control_rate, color='black', ls='-.', lw=2, alpha=0.7,
+                  label=f'Control rate = {control_rate:.3f}')
+
+    # Title with epsilon if provided
+    if epsilon is not None:
+        title = f'Weakly Informative Prior and Variant Posteriors\n(ε = {epsilon:.3f}, threshold = control - ε)'
+    else:
+        title = 'Weakly Informative Prior and Variant Posteriors'
+
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.set_xlabel('Conversion Rate', fontsize=12)
+    ax.set_ylabel('Probability Density', fontsize=12)
+    ax.grid(True, ls=':', alpha=0.3)
+    ax.legend(loc='upper left', fontsize=9, ncol=1)
+
+    # Add text box with posterior probabilities
+    textstr = 'P(variant > threshold):\n'
+    for stat in variant_stats:
+        status = '✓' if stat['prob'] >= 0.95 else '✗'
+        textstr += f"{status} {stat['name']}: {stat['prob']:.3f}\n"
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
+    ax.text(0.98, 0.97, textstr.strip(), transform=ax.transAxes,
+            fontsize=10, verticalalignment='top', horizontalalignment='right',
+            bbox=props, family='monospace')
+
+    plt.tight_layout()
+
+    return fig, ax
+
+
 def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rate, epsilon,
                                        colors=None, x_range=None, figsize=(12, 6)):
     """
