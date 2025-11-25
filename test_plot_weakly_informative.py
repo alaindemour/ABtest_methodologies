@@ -1,9 +1,15 @@
 """
 Test script for the improved plotting function that shows weakly informative
 prior and all variant posteriors together.
+
+This demonstrates the simplified usage where you can pass the output of
+test_non_inferiority_weakly_informative() directly to the plotting function.
 """
 
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
+from bayesian import test_non_inferiority_weakly_informative
 from plotting_utils import plot_weakly_informative_prior_with_variants
 
 # Data from the notebook example
@@ -22,62 +28,76 @@ variants_data = {
 epsilon = 0.05  # 5% non-inferiority margin
 alpha_prior_strength = 20
 
-# Compute prior parameters (same as in the utility function)
-target_prior_mean = control_group_conversion_rate - epsilon
-alpha_prior = alpha_prior_strength
-beta_prior = (alpha_prior / target_prior_mean) - alpha_prior
+print("="*80)
+print("BAYESIAN NON-INFERIORITY TEST WITH WEAKLY INFORMATIVE PRIOR")
+print("="*80)
 
-print(f"Control conversion rate: {control_group_conversion_rate:.4f}")
-print(f"Non-inferiority threshold: {control_group_conversion_rate - epsilon:.4f}")
-print(f"\nPrior parameters:")
-print(f"  α = {alpha_prior:.2f}")
-print(f"  β = {beta_prior:.2f}")
-print(f"  mean = {target_prior_mean:.4f}")
+print(f"\nControl group:")
+print(f"  n = {nC:,}")
+print(f"  x = {xC_observed:,}")
+print(f"  Conversion rate: {control_group_conversion_rate:.4f} ({control_group_conversion_rate*100:.2f}%)")
 
-# Compute posteriors for all variants
-variants_posteriors = {}
+print(f"\nTest parameters:")
+print(f"  Non-inferiority margin (ε): {epsilon:.2%}")
+print(f"  Non-inferiority threshold: {control_group_conversion_rate - epsilon:.4f}")
+print(f"  Required probability: 95%")
+
+print(f"\nVariants:")
 for name, data in variants_data.items():
-    alpha_post = data['x'] + alpha_prior
-    beta_post = (data['n'] - data['x']) + beta_prior
+    rate = data['x'] / data['n']
+    print(f"  {name}: n={data['n']:3d}, x={data['x']:3d}, rate={rate:.4f} ({rate*100:.2f}%)")
 
-    variants_posteriors[name] = {
-        'alpha': alpha_post,
-        'beta': beta_post,
-        'n': data['n'],
-        'x': data['x']
-    }
+# Run the test
+print("\n" + "="*80)
+print("Running test_non_inferiority_weakly_informative...")
+print("="*80)
 
-    post_mean = alpha_post / (alpha_post + beta_post)
-    print(f"\nVariant {name}:")
-    print(f"  Observed: {data['x']}/{data['n']} = {data['x']/data['n']:.4f}")
-    print(f"  Posterior: Beta({alpha_post:.1f}, {beta_post:.1f})")
-    print(f"  Posterior mean: {post_mean:.4f}")
+results = test_non_inferiority_weakly_informative(
+    n_control=nC,
+    x_control=xC_observed,
+    variants_data=variants_data,
+    epsilon=epsilon,
+    alpha_prior_strength=alpha_prior_strength
+)
 
-# Create the plot
+print("\nResults:")
+for variant_name, result in results.items():
+    status = "✓ NON-INFERIOR" if result['is_non_inferior'] else "✗ NOT NON-INFERIOR"
+    print(f"\n  Variant {variant_name}: {status}")
+    print(f"    Probability: {result['probability']:.4f} ({result['probability']*100:.2f}%)")
+    print(f"    Posterior mean: {result['variant_rate']:.4f}")
+
+# Create the plot - NOW SIMPLIFIED!
 print("\n" + "="*80)
 print("Creating plot with prior and all variant posteriors...")
 print("="*80)
+print("\nSimplified usage: Just pass the results directly!")
+print("  fig, ax = plot_weakly_informative_prior_with_variants(results)")
 
-fig, ax = plot_weakly_informative_prior_with_variants(
-    alpha_prior=alpha_prior,
-    beta_prior=beta_prior,
-    variants_posteriors=variants_posteriors,
-    threshold=control_group_conversion_rate - epsilon,
-    control_rate=control_group_conversion_rate,
-    epsilon=epsilon
-)
+fig, ax = plot_weakly_informative_prior_with_variants(results)
 
 # Save the figure
 output_file = 'weakly_informative_prior_all_variants.png'
 plt.savefig(output_file, dpi=150, bbox_inches='tight')
 print(f"\n✓ Plot saved to: {output_file}")
 
-# Show the plot
-plt.show()
+print("\n" + "="*80)
+print("KEY BENEFITS")
+print("="*80)
+print("""
+1. SIMPLIFIED USAGE:
+   - Just pass test results directly to plotting function
+   - No need to manually extract alpha_prior, beta_prior, threshold, etc.
+   - All parameters auto-detected from results
 
-print("\nPlot features:")
-print("  • Gray dashed line: Common weakly informative prior for all variants")
-print("  • Colored solid lines: Posterior distributions for each variant")
-print("  • Red dotted line: Non-inferiority threshold (control - ε)")
-print("  • Black dash-dot line: Control group conversion rate")
-print("  • Text box: Probability each variant exceeds threshold (✓ if ≥95%)")
+2. COMPREHENSIVE VISUALIZATION:
+   - Gray dashed line: Common weakly informative prior
+   - Colored solid lines: Posterior for each variant
+   - Red dotted line: Non-inferiority threshold
+   - Black dash-dot line: Control rate
+   - Text box: P(variant > threshold) with ✓/✗ indicators
+
+3. BACKWARDS COMPATIBLE:
+   - Still supports legacy manual format if needed
+   - Automatically detects which format you're using
+""")
