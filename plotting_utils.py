@@ -591,13 +591,15 @@ def plot_weakly_informative_prior_with_variants(variants_results,
         if control_rate is None:
             control_rate = first_variant['control_rate']
 
-        # Extract or compute threshold
+        # Extract threshold (the actual test threshold, NOT prior_mean!)
         if threshold is None:
-            threshold = first_variant['prior_mean']
+            threshold = first_variant.get('threshold', first_variant['prior_mean'])
+            # Note: 'threshold' key was added in latest version
+            # Falls back to 'prior_mean' for backwards compatibility (though incorrect)
 
-        # Compute epsilon if not provided
-        if epsilon is None and control_rate is not None:
-            epsilon = control_rate - threshold
+        # Extract epsilon if not provided
+        if epsilon is None:
+            epsilon = first_variant.get('epsilon', control_rate - threshold)
     else:
         # Legacy format - require explicit parameters
         if alpha_prior is None or beta_prior is None:

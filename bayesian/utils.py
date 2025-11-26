@@ -242,7 +242,9 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
             'variant_rate': variant_posterior_mean,
             'posterior_params': (alpha_posterior, beta_posterior),
             'prior_params': (alpha_prior, beta_prior),
-            'prior_mean': target_prior_mean
+            'prior_mean': target_prior_mean,
+            'threshold': non_inferiority_threshold,  # Store the actual test threshold
+            'epsilon': epsilon  # Store epsilon for reference
         }
 
     return results
