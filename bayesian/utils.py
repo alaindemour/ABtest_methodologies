@@ -97,24 +97,25 @@ def test_non_inferiority(n_control, x_control, variants_data, epsilon,
 
 
 def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
-                                            epsilon, alpha_prior_strength=20,
-                                            threshold=0.95):
+                                            epsilon, expected_degradation=None,
+                                            alpha_prior_strength=20, threshold=0.95):
     """
-    Test non-inferiority using weakly informative prior based on historical data.
+    Test non-inferiority using weakly informative prior based on domain knowledge.
 
-    This function implements the methodology described in the notebook section
-    "Weakly Informative Prior Using Historical Data". Instead of requiring manual
-    specification of prior parameters, it automatically constructs a weakly
-    informative prior centered at the expected variant conversion rate
-    (control_rate - epsilon) with high entropy to avoid dominating the data.
+    This function constructs a weakly informative prior centered at your expected
+    variant performance (based on domain knowledge), then tests against a separate
+    non-inferiority threshold (based on business requirements).
+
+    Key insight: Prior belief (where you expect the variant to be) is SEPARATE from
+    the decision threshold (worst acceptable performance).
 
     The prior is constructed as:
     - α_prior = alpha_prior_strength (default: 20, for high entropy/wide uncertainty)
     - β_prior = (α_prior / target_mean) - α_prior
-    - target_mean = control_conversion_rate - epsilon
+    - target_mean = control_rate - expected_degradation
 
-    This prior expresses: "We expect the variant to be slightly worse than control
-    (by epsilon), but we're quite uncertain about this expectation."
+    The test threshold is:
+    - non_inferiority_threshold = control_rate - epsilon
 
     Parameters
     ----------
@@ -126,7 +127,13 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
         Dictionary with variant names as keys and {'n': samples, 'x': successes} as values
         Example: {'A': {'n': 561, 'x': 381}, 'B': {'n': 285, 'x': 192}}
     epsilon : float
-        Non-inferiority margin (e.g., 0.05 for 5% acceptable degradation)
+        Non-inferiority margin - maximum acceptable degradation (business requirement)
+        Example: 0.05 means "can tolerate up to 5% degradation"
+    expected_degradation : float, optional
+        Expected degradation based on domain knowledge (e.g., "adding 2 clicks will
+        degrade by ~2%"). If None, defaults to epsilon (conservative).
+        Should typically be LESS than epsilon.
+        Example: 0.02 means "expect 2% degradation"
     alpha_prior_strength : float, optional
         Strength parameter for the prior (default: 20). Smaller values give
         wider (more uncertain) priors. Typical values: 10-30.
@@ -147,43 +154,57 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
 
     Examples
     --------
-    >>> # Historical data: control has 20% conversion, testing 3 variants
+    >>> # Case 1: With domain knowledge
+    >>> # You know adding 2 clicks will degrade by ~2%, but can tolerate 5%
     >>> variants = {
     ...     'A': {'n': 561, 'x': 381},
-    ...     'B': {'n': 285, 'x': 192},
-    ...     'C': {'n': 294, 'x': 201}
+    ...     'B': {'n': 285, 'x': 192}
     ... }
     >>> results = test_non_inferiority_weakly_informative(
     ...     n_control=4411, x_control=3138,
     ...     variants_data=variants,
-    ...     epsilon=0.05
+    ...     epsilon=0.05,  # Business: can tolerate 5% degradation
+    ...     expected_degradation=0.02  # Domain knowledge: expect 2% degradation
     ... )
-    >>> for variant, result in results.items():
-    ...     print(f"{variant}: {result['is_non_inferior']} "
-    ...           f"(P={result['probability']:.3f})")
-    A: True (P=0.967)
-    B: True (P=0.952)
-    C: True (P=0.961)
+    >>> # Prior centered at control - 2%, tested against control - 5%
+
+    >>> # Case 2: Conservative (no domain knowledge)
+    >>> results = test_non_inferiority_weakly_informative(
+    ...     n_control=4411, x_control=3138,
+    ...     variants_data=variants,
+    ...     epsilon=0.05,  # Can tolerate 5%
+    ...     expected_degradation=None  # Defaults to epsilon (conservative)
+    ... )
+    >>> # Prior centered at control - 5%, tested against control - 5%
 
     Notes
     -----
     This approach is particularly valuable when:
-    - You have historical data about control conversion rates
-    - You want to incorporate domain knowledge without being overly confident
+    - You have domain knowledge about expected performance
+    - You want to incorporate this knowledge without being overly confident
     - Sample sizes are small (NHST would be underpowered)
     - You're adding features that shouldn't dramatically change behavior
 
-    The weakly informative prior:
-    - Centers belief around expected variant performance (control - epsilon)
-    - Maintains high uncertainty (high entropy) via small alpha/beta values
-    - Allows data to dominate when sample sizes are reasonable
-    - Provides reasonable estimates even with very small samples
+    The separation of expected_degradation and epsilon allows:
+    - Prior to reflect realistic expectations (domain knowledge)
+    - Threshold to reflect business requirements (risk tolerance)
+    - Proper Bayesian inference where prior reinforces data when they agree
+
+    When to use different values:
+    - expected_degradation < epsilon: You expect minor degradation but can tolerate more
+    - expected_degradation = epsilon: Conservative, no domain knowledge
+    - expected_degradation = 0: Neutral, expect no change (like adding cosmetic feature)
     """
     # Compute control conversion rate
     control_rate = x_control / n_control
 
-    # Construct weakly informative prior centered at (control_rate - epsilon)
-    target_prior_mean = control_rate - epsilon
+    # Determine expected degradation (defaults to epsilon if not specified)
+    if expected_degradation is None:
+        expected_degradation = epsilon
+
+    # Construct weakly informative prior centered at expected performance
+    # This reflects domain knowledge, separate from the business threshold
+    target_prior_mean = control_rate - expected_degradation
     alpha_prior = alpha_prior_strength
     beta_prior = (alpha_prior / target_prior_mean) - alpha_prior
 
