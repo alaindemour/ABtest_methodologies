@@ -220,8 +220,10 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
 
     for variant_name, data in variants_data.items():
         # Variant posterior: Beta(x + α_prior, n - x + β_prior)
-        alpha_posterior = data['x'] + alpha_prior
-        beta_posterior = (data['n'] - data['x']) + beta_prior
+        n = data['n']
+        x = data['x']
+        alpha_posterior = x + alpha_prior
+        beta_posterior = (n - x) + beta_prior
         variant_posterior_mean = alpha_posterior / (alpha_posterior + beta_posterior)
 
         # Non-inferiority threshold
@@ -244,7 +246,9 @@ def test_non_inferiority_weakly_informative(n_control, x_control, variants_data,
             'prior_params': (alpha_prior, beta_prior),
             'prior_mean': target_prior_mean,
             'threshold': non_inferiority_threshold,  # Store the actual test threshold
-            'epsilon': epsilon  # Store epsilon for reference
+            'epsilon': epsilon,  # Store epsilon for reference
+            'n': n,  # Store sample size for plotting
+            'x': x   # Store successes for plotting
         }
 
     return results
