@@ -25,7 +25,14 @@ Key validations:
 
 from typing import Dict, Any
 import pytest
-from bayesian import test_non_inferiority_weakly_informative
+
+# Why we import the module instead of the function:
+# - The function name is test_non_inferiority_weakly_informative
+# - This is CORRECT domain naming (it tests a hypothesis in A/B testing)
+# - But pytest collects any "test_*" in a test file's namespace
+# - By importing the MODULE, not the FUNCTION, we keep it out of the namespace
+# - pytest won't try to run bayesian_utils.test_non_inferiority_weakly_informative()
+import bayesian.utils as bayesian_utils
 
 
 def test_function_returns_results_for_all_variants(
@@ -49,7 +56,7 @@ def test_function_returns_results_for_all_variants(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT: Run the non-inferiority test
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -89,7 +96,7 @@ def test_result_structure_contains_all_required_fields(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -136,7 +143,7 @@ def test_prior_parameters_are_mathematically_valid(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -180,7 +187,7 @@ def test_posterior_parameters_increase_from_prior(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -229,7 +236,7 @@ def test_probability_values_are_in_valid_range(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -269,7 +276,7 @@ def test_non_inferiority_decision_matches_threshold(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -320,7 +327,7 @@ def test_variant_conversion_rates_are_calculated_correctly(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -370,7 +377,7 @@ def test_all_variants_share_same_prior_parameters(
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
     # ACT
-    test_results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    test_results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,

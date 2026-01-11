@@ -38,8 +38,13 @@ from matplotlib.axes import Axes
 # - Must be set before importing pyplot
 matplotlib.use('Agg')
 
-from bayesian import test_non_inferiority_weakly_informative
-from plotting_utils import plot_weakly_informative_prior_with_variants
+# Why we import modules instead of functions with "test_" prefix:
+# - A/B testing functions are correctly named test_* (they test hypotheses)
+# - But pytest collects any "test_*" in a test file's namespace
+# - Qualified imports keep these functions out of the test namespace
+# - This prevents pytest from trying to run domain functions as pytest tests
+import bayesian.utils as bayesian_utils
+import plotting_utils
 
 
 @pytest.fixture
@@ -62,7 +67,7 @@ def bayesian_test_results(
     prior_strength: int = non_inferiority_test_parameters['alpha_prior_strength']
     probability_threshold: float = non_inferiority_test_parameters['threshold']
 
-    results: Dict[str, Dict[str, Any]] = test_non_inferiority_weakly_informative(
+    results: Dict[str, Dict[str, Any]] = bayesian_utils.test_non_inferiority_weakly_informative(
         n_control=control_total_users,
         x_control=control_converted_users,
         variants_data=variants_experiment_data,
@@ -88,7 +93,7 @@ def test_plotting_function_returns_matplotlib_objects(
     # ARRANGE: Test results are already prepared by fixture
 
     # ACT: Call the plotting function
-    returned_figure, returned_axes = plot_weakly_informative_prior_with_variants(
+    returned_figure, returned_axes = plotting_utils.plot_weakly_informative_prior_with_variants(
         bayesian_test_results
     )
 
@@ -119,7 +124,7 @@ def test_plotting_function_creates_non_empty_axes(
     # (Test results prepared by fixture)
 
     # ACT
-    plot_figure, plot_axes = plot_weakly_informative_prior_with_variants(
+    plot_figure, plot_axes = plotting_utils.plot_weakly_informative_prior_with_variants(
         bayesian_test_results
     )
 
@@ -180,7 +185,7 @@ def test_plotting_function_saves_file_successfully(
     output_file_path: Path = tmp_path / "test_weakly_informative_plot.png"
 
     # ACT: Create plot and save to file
-    plot_figure, plot_axes = plot_weakly_informative_prior_with_variants(
+    plot_figure, plot_axes = plotting_utils.plot_weakly_informative_prior_with_variants(
         bayesian_test_results
     )
 
@@ -225,7 +230,7 @@ def test_plotting_function_handles_all_variants(
     number_of_variants: int = len(bayesian_test_results)
 
     # ACT
-    plot_figure, plot_axes = plot_weakly_informative_prior_with_variants(
+    plot_figure, plot_axes = plotting_utils.plot_weakly_informative_prior_with_variants(
         bayesian_test_results
     )
 
@@ -267,7 +272,7 @@ def test_plotting_function_does_not_raise_exceptions(
 
     # ACT & ASSERT: Function should not raise any exceptions
     try:
-        plot_figure, plot_axes = plot_weakly_informative_prior_with_variants(
+        plot_figure, plot_axes = plotting_utils.plot_weakly_informative_prior_with_variants(
             bayesian_test_results
         )
 
@@ -304,7 +309,7 @@ def test_plotting_with_custom_figure_size(
     custom_figsize: Tuple[float, float] = (custom_width_inches, custom_height_inches)
 
     # ACT: Create plot with custom size
-    plot_figure, plot_axes = plot_weakly_informative_prior_with_variants(
+    plot_figure, plot_axes = plotting_utils.plot_weakly_informative_prior_with_variants(
         bayesian_test_results,
         figsize=custom_figsize
     )
