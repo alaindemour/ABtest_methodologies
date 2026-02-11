@@ -209,7 +209,7 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
     Plot comparison of different Beta prior distributions.
 
     This function creates a 2x2 grid comparing four different Beta prior distributions,
-    including uninformative, weakly informative, strongly informative, and bi-modal priors.
+    including uninformative, weakly informative, strongly informative, and truncated priors.
 
     Parameters
     ----------
@@ -218,7 +218,7 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
         - Uninformative flat: Beta(1, 1)
         - Weakly informative: Beta(3, 12)
         - Strong conviction: Beta(200, 800)
-        - Bi-modal mixture: mix of Beta(5,20) and Beta(20,5)
+        - Truncated Beta: Beta(2, 5) restricted to [0.2, 0.8]
     figsize : tuple, optional
         Figure size as (width, height). Default is (10, 7)
 
@@ -236,10 +236,10 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
     - Mean (dotted vertical line)
     - 95% credible interval (dashed lines)
 
-    For mixture distributions, plots:
-    - Combined PDF
-    - Component means (dashed lines)
-    - Mixture mean (dotted line)
+    For truncated distributions, plots:
+    - PDF curve rescaled to integrate to 1 over the truncated interval
+    - Mean of the truncated distribution (dotted vertical line)
+    - Truncation boundaries (dashed vertical lines)
 
     Examples
     --------
@@ -252,7 +252,7 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
             ("Uninformative (flat)", ("single", (1, 1))),
             ("Weakly informative (centered, high entropy)", ("single", (3, 12))),
             ("Strong conviction (centered, low entropy)", ("single", (200, 800))),
-            ("Bi-modal (mixture of Betas)", ("mixture", ((5, 20, 0.5), (20, 5, 0.5))))
+            ("Truncated Beta (practical sub-range)", ("truncated", (2, 5, 0.2, 0.8)))
         ]
 
     x = np.linspace(0, 1, 1000)
@@ -272,21 +272,27 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
             ax.axvline(ci_high, color="C1", ls="--", lw=1)
             ax.set_title(f"{title}\nBeta(α={a}, β={b})", fontsize=10)
             ax.legend(fontsize=8, loc="best")
-        else:
-            # Mixture of two Betas: (a1, b1, w1), (a2, b2, w2)
-            (a1, b1, w1), (a2, b2, w2) = params
-            y = w1 * beta_dist.pdf(x, a1, b1) + w2 * beta_dist.pdf(x, a2, b2)
-            m1, m2 = a1 / (a1 + b1), a2 / (a2 + b2)
-            mix_mean = w1 * m1 + w2 * m2
+        elif kind == "truncated":
+            # Truncated Beta: (a, b, lower, upper)
+            a, b, lower, upper = params
+            # Normalizing constant: probability mass in [lower, upper]
+            norm_const = beta_dist.cdf(upper, a, b) - beta_dist.cdf(lower, a, b)
+            # Compute truncated PDF (zero outside [lower, upper])
+            mask = (x >= lower) & (x <= upper)
+            y = np.zeros_like(x)
+            y[mask] = beta_dist.pdf(x[mask], a, b) / norm_const
+            # Truncated mean via numerical integration
+            x_inner = x[mask]
+            y_inner = beta_dist.pdf(x_inner, a, b) / norm_const
+            trunc_mean = np.trapz(x_inner * y_inner, x_inner)
 
-            ax.plot(x, y, color="C0", lw=2, label="mixture pdf")
+            ax.plot(x, y, color="C0", lw=2, label="truncated pdf")
             ax.fill_between(x, y, color="C0", alpha=0.12)
-            # Component means
-            ax.axvline(m1, color="C2", ls="--", lw=1, label=f"mean₁={m1:.2f}")
-            ax.axvline(m2, color="C3", ls="--", lw=1, label=f"mean₂={m2:.2f}")
-            # Mixture mean
-            ax.axvline(mix_mean, color="k", ls=":", lw=1.2, label=f"mixture mean={mix_mean:.2f}")
-            ax.set_title(f"{title}\n{w1:.1f}·Beta({a1},{b1}) + {w2:.1f}·Beta({a2},{b2})",
+            ax.axvline(trunc_mean, color="k", ls=":", lw=1.2,
+                       label=f"mean={trunc_mean:.3f}")
+            ax.axvline(lower, color="C3", ls="--", lw=1, label=f"lower={lower}")
+            ax.axvline(upper, color="C3", ls="--", lw=1, label=f"upper={upper}")
+            ax.set_title(f"{title}\nBeta({a},{b}) on [{lower},{upper}]",
                         fontsize=10)
             ax.legend(fontsize=8, loc="best")
 
@@ -295,7 +301,7 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
     for ax in axes[:, 0]:
         ax.set_ylabel("density")
 
-    fig.suptitle("Four Beta Priors: flat, weakly centered, strongly centered, bi-modal",
+    fig.suptitle("Four Beta Priors: flat, weakly centered, strongly centered, truncated",
                  fontsize=12)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
