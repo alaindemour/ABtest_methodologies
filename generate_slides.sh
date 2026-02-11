@@ -11,50 +11,49 @@ jupyter nbconvert presentation.ipynb --to slides
 
 echo "Applying bottom-margin fix..."
 python3 << 'PYEOF'
+import re
+
 with open('presentation.slides.html', 'r') as f:
     html = f.read()
 
-# Inject CSS right before </head>
+# 1. Patch Reveal.initialize() config directly
+#    Find the initialization call and inject margin/height overrides
+#    Reveal 4.x uses: Reveal.initialize({...}) inside a <script type="module">
+#    We need to add our config INTO that initialize call
+
+# Match ONLY Reveal.initialize({ (not mermaid.initialize)
+html = re.sub(
+    r'(Reveal\.initialize\(\{[^}]*?)height:\s*700',
+    r'\1margin: 0.15,\n            height: 600',
+    html,
+    count=1,
+    flags=re.DOTALL
+)
+
+# 2. Inject CSS before </head> — pure CSS fixes that don't need JS API
 css_fix = """
 <style>
-/* Fix: Reveal.js bottom margin cutoff */
-.reveal .slides section {
-    box-sizing: border-box !important;
-    padding-bottom: 40px !important;
+/* Fix: Reveal.js bottom content cutoff on macOS Safari/Chrome */
+.reveal .slides > section,
+.reveal .slides > section > section {
     overflow-y: auto !important;
-    max-height: 100% !important;
-}
-.reveal .slide-number {
-    bottom: 8px !important;
-    right: 8px !important;
+    height: 100% !important;
 }
 </style>
 """
 html = html.replace('</head>', css_fix + '\n</head>')
 
-# Inject Reveal config override right before </body>
-# Must run AFTER Reveal.initialize(), so we place it at the very end
-js_fix = """
-<script>
-// Fix: Override Reveal config after initialization
-Reveal.on('ready', function() {
-    Reveal.configure({
-        margin: 0.12,
-        height: 620,
-        minScale: 0.2,
-        maxScale: 1.5
-    });
-    // Force re-layout after config change
-    Reveal.layout();
-});
-</script>
-"""
-html = html.replace('</body>', js_fix + '\n</body>')
-
 with open('presentation.slides.html', 'w') as f:
     f.write(html)
 
-print("Done. Applied CSS and Reveal.configure() fixes.")
+# Verify the patch was applied
+if 'height: 600' in html and 'margin: 0.15' in html:
+    print("Done. Patched Reveal.initialize(): height 700->600, added margin=0.15.")
+else:
+    print("WARNING: Could not patch Reveal.initialize().")
+    print("Searching for current config...")
+    import subprocess
+    subprocess.run(['grep', '-n', 'Reveal.initialize', 'presentation.slides.html'])
 PYEOF
 
 echo ""
