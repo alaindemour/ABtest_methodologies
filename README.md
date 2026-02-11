@@ -36,3 +36,7 @@ jupyter nbconvert --to html --output-dir rendered *.ipynb
 # Render a specific notebook
 jupyter nbconvert --to html --output-dir rendered ABmethodologies.ipynb
 ```
+
+```bash
+jupyter nbconvert presentation.ipynb --to slides
+```
