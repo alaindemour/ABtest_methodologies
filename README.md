@@ -39,4 +39,5 @@ jupyter nbconvert --to html --output-dir rendered ABmethodologies.ipynb
 
 ```bash
 jupyter nbconvert presentation.ipynb --to slides
+jupyter nbconvert presentation.ipynb --to slides --TagRemovePreprocessor.remove_input_tags='["remove-input"]'
 ```
