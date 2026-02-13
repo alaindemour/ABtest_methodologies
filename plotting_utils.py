@@ -397,7 +397,8 @@ def plot_prior_vs_posterior(alpha, beta_param, control_group_conversion_rate,
 
 
 def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_posterior,
-                                                beta_posterior, threshold, figsize=(10, 6)):
+                                                beta_posterior, threshold, figsize=(10, 6),
+                                                x_limits=None):
     """
     Plot informative prior vs posterior with non-inferiority tail areas.
 
@@ -457,9 +458,12 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     prob_non_inferior_post = beta_dist.sf(threshold, alpha_posterior, beta_posterior)
     prob_non_inferior_prior = beta_dist.sf(threshold, alpha_prior, beta_prior)
 
-    # Plot range focused around the relevant region
-    x_min = max(0.0, threshold - 0.12)
-    x_max = min(1.0, threshold + 0.28)
+    # Plot range: use explicit limits if provided, otherwise auto-focus
+    if x_limits is not None:
+        x_min, x_max = x_limits
+    else:
+        x_min = max(0.0, threshold - 0.12)
+        x_max = min(1.0, threshold + 0.28)
     x_range = np.linspace(x_min, x_max, 1200)
 
     prior_pdf = beta_dist.pdf(x_range, alpha_prior, beta_prior)
