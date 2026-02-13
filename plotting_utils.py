@@ -397,7 +397,7 @@ def plot_prior_vs_posterior(alpha, beta_param, control_group_conversion_rate,
 
 
 def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_posterior,
-                                                beta_posterior, threshold, figsize=(10, 6),
+                                                beta_posterior, threshold=None, figsize=(10, 6),
                                                 x_limits=None):
     """
     Plot informative prior vs posterior with non-inferiority tail areas.
@@ -454,16 +454,21 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     >>> print(f"Posterior P(p_A > threshold) = {post_prob:.4f}")
     >>> plt.show()
     """
-    # Compute probabilities (posterior and prior) for reference
-    prob_non_inferior_post = beta_dist.sf(threshold, alpha_posterior, beta_posterior)
-    prob_non_inferior_prior = beta_dist.sf(threshold, alpha_prior, beta_prior)
+    # Compute probabilities if threshold is provided
+    prob_non_inferior_post = None
+    prob_non_inferior_prior = None
+    if threshold is not None:
+        prob_non_inferior_post = beta_dist.sf(threshold, alpha_posterior, beta_posterior)
+        prob_non_inferior_prior = beta_dist.sf(threshold, alpha_prior, beta_prior)
 
     # Plot range: use explicit limits if provided, otherwise auto-focus
     if x_limits is not None:
         x_min, x_max = x_limits
-    else:
+    elif threshold is not None:
         x_min = max(0.0, threshold - 0.12)
         x_max = min(1.0, threshold + 0.28)
+    else:
+        x_min, x_max = 0.0, 1.0
     x_range = np.linspace(x_min, x_max, 1200)
 
     prior_pdf = beta_dist.pdf(x_range, alpha_prior, beta_prior)
@@ -477,25 +482,29 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     ax.plot(x_range, post_pdf, color="#d62728", lw=2.5,
             label=f"Posterior Beta({alpha_posterior:.2f}, {beta_posterior:.2f})")
 
-    # Non-inferiority boundary
-    ax.axvline(threshold, color="k", ls=":", lw=1.8,
-               label=f"Non-inferiority boundary = {threshold:.2f}")
+    if threshold is not None:
+        # Non-inferiority boundary
+        ax.axvline(threshold, color="k", ls=":", lw=1.8,
+                   label=f"Non-inferiority boundary = {threshold:.2f}")
 
-    # Shade posterior tail (non-inferiority probability)
-    mask_post = x_range >= threshold
-    ax.fill_between(x_range[mask_post], post_pdf[mask_post], color="#d62728", alpha=0.3,
-                    label=f"Posterior tail area = {prob_non_inferior_post:.3f}")
+        # Shade posterior tail (non-inferiority probability)
+        mask_post = x_range >= threshold
+        ax.fill_between(x_range[mask_post], post_pdf[mask_post], color="#d62728", alpha=0.3,
+                        label=f"Posterior tail area = {prob_non_inferior_post:.3f}")
 
-    # Optional: shade prior tail for comparison (lighter)
-    mask_prior = x_range >= threshold
-    ax.fill_between(x_range[mask_prior], prior_pdf[mask_prior], color="#1f77b4", alpha=0.15,
-                    label=f"Prior tail area = {prob_non_inferior_prior:.3f}")
+        # Shade prior tail for comparison (lighter)
+        mask_prior = x_range >= threshold
+        ax.fill_between(x_range[mask_prior], prior_pdf[mask_prior], color="#1f77b4", alpha=0.15,
+                        label=f"Prior tail area = {prob_non_inferior_prior:.3f}")
 
     # Decorations
     ax.set_xlim(x_min, x_max)
     ax.set_xlabel("Conversion rate p_A", fontsize=12)
     ax.set_ylabel("Density", fontsize=12)
-    ax.set_title("Prior vs Posterior and Non-Inferiority Probability (tail area)", fontsize=14)
+    if threshold is not None:
+        ax.set_title("Prior vs Posterior and Non-Inferiority Probability (tail area)", fontsize=14)
+    else:
+        ax.set_title("Bayesian Update: Prior vs Posterior", fontsize=14)
     ax.grid(True, ls=":", alpha=0.5)
     ax.legend(loc="best", fontsize=10)
     plt.tight_layout()
