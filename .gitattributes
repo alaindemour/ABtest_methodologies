@@ -1,3 +1,4 @@
 *.ipynb filter=nbstripout
+*.ipynb merge=nbstripout-merge
 *.zpln filter=nbstripout
 *.ipynb diff=ipynb
