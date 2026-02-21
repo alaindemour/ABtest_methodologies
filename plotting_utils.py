@@ -11,8 +11,9 @@ from matplotlib.ticker import FormatStrFormatter
 from scipy.stats import norm, beta as beta_dist
 
 
-def plot_gaussian_hypothesis_test(mu_H0, sigma_H0, observed_value, alpha, epsilon,
-                                   figsize=(7.5, 4.5)):
+def plot_gaussian_hypothesis_test(
+    mu_H0, sigma_H0, observed_value, alpha, epsilon, figsize=(7.5, 4.5)
+):
     """
     Plot a Gaussian distribution under the null hypothesis with hypothesis test annotations.
 
@@ -73,25 +74,33 @@ def plot_gaussian_hypothesis_test(mu_H0, sigma_H0, observed_value, alpha, epsilo
 
     # Create the plot
     fig, ax = plt.subplots(figsize=figsize)
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    ax.xaxis.set_major_formatter(FormatStrFormatter("%.3f"))
     ax.plot(xs, pdf, color="C0", lw=2, label="Density")
 
     # Shade right tail
     mask = xs >= observed_value
-    ax.fill_between(xs[mask], pdf[mask], color="C1", alpha=0.35,
-                     label=f"Right tail p = {p:.4g}")
+    ax.fill_between(
+        xs[mask], pdf[mask], color="C1", alpha=0.35, label=f"Right tail p = {p:.4g}"
+    )
 
     # Vertical line at observed value
-    ax.axvline(observed_value, color="C1", ls="--", lw=1.5,
-               label=f"observed delta = {observed_value:.4f}")
+    ax.axvline(
+        observed_value,
+        color="C1",
+        ls="--",
+        lw=1.5,
+        label=f"observed delta = {observed_value:.4f}",
+    )
 
     # Vertical line at critical value
-    ax.axvline(crit_x, color="C2", ls="-.", lw=1.5,
-               label=f"critical value c = {crit_x:.4f}")
+    ax.axvline(
+        crit_x, color="C2", ls="-.", lw=1.5, label=f"critical value c = {crit_x:.4f}"
+    )
 
     # Vertical line at the mean for the null hypothesis H0
-    ax.axvline(-epsilon, color="k", ls=":", lw=1.5,
-               label=f"mean under H0 = {-epsilon:.4f}")
+    ax.axvline(
+        -epsilon, color="k", ls=":", lw=1.5, label=f"mean under H0 = {-epsilon:.4f}"
+    )
 
     # Decorations
     ax.set_title(f"Normal(μ={mu_H0:.4f}, σ={sigma_H0:.4f}) — Right-tail beyond x")
@@ -104,8 +113,16 @@ def plot_gaussian_hypothesis_test(mu_H0, sigma_H0, observed_value, alpha, epsilo
     return fig, ax
 
 
-def plot_type_ii_error_analysis(mu_H1, sigma_H1, critical_value, hatDelta_observed,
-                                epsilon, beta, power, figsize=(7.5, 4.5)):
+def plot_type_ii_error_analysis(
+    mu_H1,
+    sigma_H1,
+    critical_value,
+    hatDelta_observed,
+    epsilon,
+    beta,
+    power,
+    figsize=(7.5, 4.5),
+):
     """
     Plot Type II error (β) and power analysis for a hypothesis test.
 
@@ -162,32 +179,54 @@ def plot_type_ii_error_analysis(mu_H1, sigma_H1, critical_value, hatDelta_observ
 
     # Create the plot
     fig, ax = plt.subplots(figsize=figsize)
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    ax.xaxis.set_major_formatter(FormatStrFormatter("%.3f"))
     ax.plot(xs, pdf, color="C0", lw=2, label="Density under H₁")
 
     # Shade left tail (Type II error region)
     mask = xs <= critical_value
-    ax.fill_between(xs[mask], pdf[mask], color="C1", alpha=0.35,
-                    label=f"Type II error β = {beta:.4g}")
+    ax.fill_between(
+        xs[mask],
+        pdf[mask],
+        color="C1",
+        alpha=0.35,
+        label=f"Type II error β = {beta:.4g}",
+    )
 
     # Vertical line at critical value
-    ax.axvline(critical_value, color="C2", ls="-.", lw=1.5,
-               label=f"critical value c = {critical_value:.4f}")
+    ax.axvline(
+        critical_value,
+        color="C2",
+        ls="-.",
+        lw=1.5,
+        label=f"critical value c = {critical_value:.4f}",
+    )
 
     # Vertical line at observed delta
-    ax.axvline(hatDelta_observed, color="C1", ls="--", lw=1.5,
-               label=f"observed delta = {hatDelta_observed:.4f}")
+    ax.axvline(
+        hatDelta_observed,
+        color="C1",
+        ls="--",
+        lw=1.5,
+        label=f"observed delta = {hatDelta_observed:.4f}",
+    )
 
     # Vertical line at the mean under H1
-    ax.axvline(mu_H1, color="k", ls=":", lw=1.5,
-               label=f"mean under H₁ = {mu_H1:.4f}")
+    ax.axvline(mu_H1, color="k", ls=":", lw=1.5, label=f"mean under H₁ = {mu_H1:.4f}")
 
     # Vertical line at the H0 boundary (for reference)
-    ax.axvline(-epsilon, color="gray", ls=":", lw=1.5, alpha=0.7,
-               label=f"H₀ boundary = {-epsilon:.4f}")
+    ax.axvline(
+        -epsilon,
+        color="gray",
+        ls=":",
+        lw=1.5,
+        alpha=0.7,
+        label=f"H₀ boundary = {-epsilon:.4f}",
+    )
 
     # Decorations
-    ax.set_title(f"Normal(μ={mu_H1:.4f}, σ={sigma_H1:.4f}) — Type II Error (β) and Power")
+    ax.set_title(
+        f"Normal(μ={mu_H1:.4f}, σ={sigma_H1:.4f}) — Type II Error (β) and Power"
+    )
     ax.set_xlabel("Δ (difference in proportions) under H₁")
     ax.set_ylabel("Probability density under H₁")
     ax.legend(loc="best", fontsize=9)
@@ -195,9 +234,16 @@ def plot_type_ii_error_analysis(mu_H1, sigma_H1, critical_value, hatDelta_observ
 
     # Add text annotation for power
     power_text = f"Power = 1 - β = {power:.4f}"
-    ax.text(0.98, 0.95, power_text, transform=ax.transAxes,
-            fontsize=10, verticalalignment='top', horizontalalignment='right',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    ax.text(
+        0.98,
+        0.95,
+        power_text,
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
 
     plt.tight_layout()
 
@@ -252,7 +298,7 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
             ("Uninformative (flat)", ("single", (1, 1))),
             ("Weakly informative (centered, high entropy)", ("single", (3, 12))),
             ("Strong conviction (centered, low entropy)", ("single", (200, 800))),
-            ("Truncated Beta (practical sub-range)", ("truncated", (2, 5, 0.2, 0.8)))
+            ("Truncated Beta (practical sub-range)", ("truncated", (2, 5, 0.2, 0.8))),
         ]
 
     x = np.linspace(0, 1, 1000)
@@ -288,12 +334,12 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
 
             ax.plot(x, y, color="C0", lw=2, label="truncated pdf")
             ax.fill_between(x, y, color="C0", alpha=0.12)
-            ax.axvline(trunc_mean, color="k", ls=":", lw=1.2,
-                       label=f"mean={trunc_mean:.3f}")
+            ax.axvline(
+                trunc_mean, color="k", ls=":", lw=1.2, label=f"mean={trunc_mean:.3f}"
+            )
             ax.axvline(lower, color="C3", ls="--", lw=1, label=f"lower={lower}")
             ax.axvline(upper, color="C3", ls="--", lw=1, label=f"upper={upper}")
-            ax.set_title(f"{title}\nBeta({a},{b}) on [{lower},{upper}]",
-                        fontsize=10)
+            ax.set_title(f"{title}\nBeta({a},{b}) on [{lower},{upper}]", fontsize=10)
             ax.legend(fontsize=8, loc="best")
 
     for ax in axes[-1]:
@@ -301,15 +347,18 @@ def plot_beta_prior_comparison(cases=None, figsize=(10, 7)):
     for ax in axes[:, 0]:
         ax.set_ylabel("density")
 
-    fig.suptitle("Four Beta Priors: flat, weakly centered, strongly centered, truncated",
-                 fontsize=12)
+    fig.suptitle(
+        "Four Beta Priors: flat, weakly centered, strongly centered, truncated",
+        fontsize=12,
+    )
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     return fig, axes
 
 
-def plot_prior_vs_posterior(alpha, beta_param, control_group_conversion_rate,
-                           epsilon, p_L, p_U, figsize=(10, 6)):
+def plot_prior_vs_posterior(
+    alpha, beta_param, control_group_conversion_rate, epsilon, p_L, p_U, figsize=(10, 6)
+):
     """
     Plot non-informative prior vs posterior distribution for Bayesian analysis.
 
@@ -368,37 +417,68 @@ def plot_prior_vs_posterior(alpha, beta_param, control_group_conversion_rate,
     posterior_noninformative_pdf = beta_dist.pdf(x_range, alpha, beta_param)
 
     fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(x_range, prior_noninformative_pdf, 'b--', lw=2,
-            label='Prior: Beta(1, 1) - Non-informative')
-    ax.plot(x_range, posterior_noninformative_pdf, 'r-', lw=2,
-            label=f'Posterior: Beta({alpha:.1f}, {beta_param:.1f})')
+    ax.plot(
+        x_range,
+        prior_noninformative_pdf,
+        "b--",
+        lw=2,
+        label="Prior: Beta(1, 1) - Non-informative",
+    )
+    ax.plot(
+        x_range,
+        posterior_noninformative_pdf,
+        "r-",
+        lw=2,
+        label=f"Posterior: Beta({alpha:.1f}, {beta_param:.1f})",
+    )
 
     # Mark the non-inferiority boundary
-    ax.axvline(control_group_conversion_rate - epsilon, color='k', ls=':', lw=1.5,
-               label=f'Non-inferiority boundary = {control_group_conversion_rate - epsilon:.2f}')
+    ax.axvline(
+        control_group_conversion_rate - epsilon,
+        color="k",
+        ls=":",
+        lw=1.5,
+        label=f"Non-inferiority boundary = {control_group_conversion_rate - epsilon:.2f}",
+    )
 
     # Mark the control conversion rate
-    ax.axvline(control_group_conversion_rate, color='g', ls=':', lw=1.5,
-               label=f'Control conversion rate = {control_group_conversion_rate:.2f}')
+    ax.axvline(
+        control_group_conversion_rate,
+        color="g",
+        ls=":",
+        lw=1.5,
+        label=f"Control conversion rate = {control_group_conversion_rate:.2f}",
+    )
 
     # Shade the 95% credible interval
     mask = (x_range >= p_L) & (x_range <= p_U)
-    ax.fill_between(x_range[mask], posterior_noninformative_pdf[mask], alpha=0.3,
-                    color='red', label='95% Credible Interval')
+    ax.fill_between(
+        x_range[mask],
+        posterior_noninformative_pdf[mask],
+        alpha=0.3,
+        color="red",
+        label="95% Credible Interval",
+    )
 
-    ax.set_xlabel('Conversion rate p_A', fontsize=12)
-    ax.set_ylabel('Probability density', fontsize=12)
-    ax.set_title('Non-informative Prior vs Posterior Distribution', fontsize=14)
-    ax.legend(loc='best')
-    ax.grid(True, ls=':', alpha=0.5)
+    ax.set_xlabel("Conversion rate p_A", fontsize=12)
+    ax.set_ylabel("Probability density", fontsize=12)
+    ax.set_title("Non-informative Prior vs Posterior Distribution", fontsize=14)
+    ax.legend(loc="best")
+    ax.grid(True, ls=":", alpha=0.5)
     plt.tight_layout()
 
     return fig, ax
 
 
-def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_posterior,
-                                                beta_posterior, threshold=None, figsize=(10, 6),
-                                                x_limits=None):
+def plot_informative_prior_posterior_comparison(
+    alpha_prior,
+    beta_prior,
+    alpha_posterior,
+    beta_posterior,
+    threshold=None,
+    figsize=(10, 6),
+    x_limits=None,
+):
     """
     Plot informative prior vs posterior with non-inferiority tail areas.
 
@@ -458,7 +538,9 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     prob_non_inferior_post = None
     prob_non_inferior_prior = None
     if threshold is not None:
-        prob_non_inferior_post = beta_dist.sf(threshold, alpha_posterior, beta_posterior)
+        prob_non_inferior_post = beta_dist.sf(
+            threshold, alpha_posterior, beta_posterior
+        )
         prob_non_inferior_prior = beta_dist.sf(threshold, alpha_prior, beta_prior)
 
     # Plot range: use explicit limits if provided, otherwise auto-focus
@@ -477,34 +559,63 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     fig, ax = plt.subplots(figsize=figsize)
 
     # Curves
-    ax.plot(x_range, prior_pdf, color="#1f77b4", lw=2, ls="--",
-            label=f"Prior Beta({alpha_prior:.2f}, {beta_prior:.2f})")
-    ax.plot(x_range, post_pdf, color="#d62728", lw=2.5,
-            label=f"Posterior Beta({alpha_posterior:.2f}, {beta_posterior:.2f})")
+    ax.plot(
+        x_range,
+        prior_pdf,
+        color="#1f77b4",
+        lw=2,
+        ls="--",
+        label=f"Prior Beta({alpha_prior:.2f}, {beta_prior:.2f})",
+    )
+    ax.plot(
+        x_range,
+        post_pdf,
+        color="#d62728",
+        lw=2.5,
+        label=f"Posterior Beta({alpha_posterior:.2f}, {beta_posterior:.2f})",
+    )
 
     if threshold is not None:
         # Non-inferiority boundary
-        ax.axvline(threshold, color="k", ls=":", lw=1.8,
-                   label=f"Non-inferiority boundary = {threshold:.2f}")
+        ax.axvline(
+            threshold,
+            color="k",
+            ls=":",
+            lw=1.8,
+            label=f"Non-inferiority boundary = {threshold:.2f}",
+        )
 
         # Shade posterior tail (non-inferiority probability)
         mask_post = x_range >= threshold
-        ax.fill_between(x_range[mask_post], post_pdf[mask_post], color="#d62728", alpha=0.3,
-                        label=f"Posterior tail area = {prob_non_inferior_post:.3f}")
+        ax.fill_between(
+            x_range[mask_post],
+            post_pdf[mask_post],
+            color="#d62728",
+            alpha=0.3,
+            label=f"Posterior tail area = {prob_non_inferior_post:.3f}",
+        )
 
         # Shade prior tail for comparison (lighter)
         mask_prior = x_range >= threshold
-        ax.fill_between(x_range[mask_prior], prior_pdf[mask_prior], color="#1f77b4", alpha=0.15,
-                        label=f"Prior tail area = {prob_non_inferior_prior:.3f}")
+        ax.fill_between(
+            x_range[mask_prior],
+            prior_pdf[mask_prior],
+            color="#1f77b4",
+            alpha=0.15,
+            label=f"Prior tail area = {prob_non_inferior_prior:.3f}",
+        )
 
     # Decorations
     ax.set_xlim(x_min, x_max)
     ax.set_xlabel("Conversion rate p_A", fontsize=12)
     ax.set_ylabel("Density", fontsize=12)
     if threshold is not None:
-        ax.set_title("Prior vs Posterior and Non-Inferiority Probability (tail area)", fontsize=14)
+        ax.set_title(
+            "Prior vs Posterior and Non-Inferiority Probability (tail area)",
+            fontsize=14,
+        )
     else:
-        ax.set_title("Bayesian Update: Prior vs Posterior", fontsize=14)
+        ax.set_title("Fundamental Bayesian Update: Prior vs Posterior", fontsize=14)
     ax.grid(True, ls=":", alpha=0.5)
     ax.legend(loc="best", fontsize=10)
     plt.tight_layout()
@@ -512,10 +623,16 @@ def plot_informative_prior_posterior_comparison(alpha_prior, beta_prior, alpha_p
     return fig, ax, prob_non_inferior_post, prob_non_inferior_prior
 
 
-def plot_weakly_informative_prior_with_variants(variants_results,
-                                                 alpha_prior=None, beta_prior=None,
-                                                 threshold=None, control_rate=None, epsilon=None,
-                                                 colors=None, figsize=(12, 7)):
+def plot_weakly_informative_prior_with_variants(
+    variants_results,
+    alpha_prior=None,
+    beta_prior=None,
+    threshold=None,
+    control_rate=None,
+    epsilon=None,
+    colors=None,
+    figsize=(12, 7),
+):
     """
     Plot weakly informative prior and all variant posteriors on the same figure.
 
@@ -601,24 +718,24 @@ def plot_weakly_informative_prior_with_variants(variants_results,
     first_variant = next(iter(variants_results.values()))
 
     # Check if this is output from test_non_inferiority_weakly_informative
-    if 'posterior_params' in first_variant:
+    if "posterior_params" in first_variant:
         # Extract prior parameters from first variant (they're all the same)
         if alpha_prior is None or beta_prior is None:
-            alpha_prior, beta_prior = first_variant['prior_params']
+            alpha_prior, beta_prior = first_variant["prior_params"]
 
         # Extract control_rate if not provided
         if control_rate is None:
-            control_rate = first_variant['control_rate']
+            control_rate = first_variant["control_rate"]
 
         # Extract threshold (the actual test threshold, NOT prior_mean!)
         if threshold is None:
-            threshold = first_variant.get('threshold', first_variant['prior_mean'])
+            threshold = first_variant.get("threshold", first_variant["prior_mean"])
             # Note: 'threshold' key was added in latest version
             # Falls back to 'prior_mean' for backwards compatibility (though incorrect)
 
         # Extract epsilon if not provided
         if epsilon is None:
-            epsilon = first_variant.get('epsilon', control_rate - threshold)
+            epsilon = first_variant.get("epsilon", control_rate - threshold)
     else:
         # Legacy format - require explicit parameters
         if alpha_prior is None or beta_prior is None:
@@ -631,7 +748,7 @@ def plot_weakly_informative_prior_with_variants(variants_results,
 
     # Default colors if not provided
     if colors is None:
-        colors = {'A': '#1f77b4', 'B': '#ff7f0e', 'C': '#2ca02c'}
+        colors = {"A": "#1f77b4", "B": "#ff7f0e", "C": "#2ca02c"}
 
     # Calculate prior mean and probability
     prior_mean = alpha_prior / (alpha_prior + beta_prior)
@@ -649,14 +766,25 @@ def plot_weakly_informative_prior_with_variants(variants_results,
 
     # Plot prior
     prior_pdf = beta_dist.pdf(x_range, alpha_prior, beta_prior)
-    ax.plot(x_range, prior_pdf, color='gray', lw=3, ls='--', alpha=0.8,
-            label=f'Prior: Beta(α={alpha_prior:.1f}, β={beta_prior:.1f}), mean={prior_mean:.3f}')
+    ax.plot(
+        x_range,
+        prior_pdf,
+        color="gray",
+        lw=3,
+        ls="--",
+        alpha=0.8,
+        label=f"Prior: Beta(α={alpha_prior:.1f}, β={beta_prior:.1f}), mean={prior_mean:.3f}",
+    )
 
     # Shade prior tail area
     mask_prior = x_range >= threshold
-    ax.fill_between(x_range[mask_prior], prior_pdf[mask_prior],
-                    color='gray', alpha=0.1,
-                    label=f'Prior P(>threshold) = {prob_prior:.3f}')
+    ax.fill_between(
+        x_range[mask_prior],
+        prior_pdf[mask_prior],
+        color="gray",
+        alpha=0.1,
+        label=f"Prior P(>threshold) = {prob_prior:.3f}",
+    )
 
     # Plot each variant's posterior
     variant_stats = []
@@ -664,86 +792,121 @@ def plot_weakly_informative_prior_with_variants(variants_results,
         data = variants_results[name]
 
         # Extract alpha and beta (support both formats)
-        if 'posterior_params' in data:
-            alpha_post, beta_post = data['posterior_params']
-            post_mean = data['variant_rate']
-            prob_non_inferior = data['probability']
+        if "posterior_params" in data:
+            alpha_post, beta_post = data["posterior_params"]
+            post_mean = data["variant_rate"]
+            prob_non_inferior = data["probability"]
             # Extract n and x if available (from original data)
-            n = data.get('n', 0)
-            x = data.get('x', 0)
-            obs_rate = post_mean  # Use posterior mean as approximation if n/x not available
+            n = data.get("n", 0)
+            x = data.get("x", 0)
+            obs_rate = (
+                post_mean  # Use posterior mean as approximation if n/x not available
+            )
         else:
-            alpha_post = data['alpha']
-            beta_post = data['beta']
-            n = data.get('n', 0)
-            x = data.get('x', 0)
+            alpha_post = data["alpha"]
+            beta_post = data["beta"]
+            n = data.get("n", 0)
+            x = data.get("x", 0)
             post_mean = alpha_post / (alpha_post + beta_post)
             obs_rate = x / n if n > 0 else post_mean
             prob_non_inferior = 1 - beta_dist.cdf(threshold, alpha_post, beta_post)
 
         # Get color
-        color = colors.get(name, f'C{hash(name) % 10}')
+        color = colors.get(name, f"C{hash(name) % 10}")
 
         # Plot posterior PDF
         post_pdf = beta_dist.pdf(x_range, alpha_post, beta_post)
-        ax.plot(x_range, post_pdf, color=color, lw=2.5,
-                label=f'{name}: n={n}, x={x} (obs={obs_rate:.3f})')
+        ax.plot(
+            x_range,
+            post_pdf,
+            color=color,
+            lw=2.5,
+            label=f"{name}: n={n}, x={x} (obs={obs_rate:.3f})",
+        )
 
         # Mark posterior mean
-        ax.axvline(post_mean, color=color, ls=':', lw=1.2, alpha=0.6)
+        ax.axvline(post_mean, color=color, ls=":", lw=1.2, alpha=0.6)
 
         # Shade tail area for this variant
         mask_post = x_range >= threshold
-        ax.fill_between(x_range[mask_post], post_pdf[mask_post],
-                       color=color, alpha=0.15)
+        ax.fill_between(
+            x_range[mask_post], post_pdf[mask_post], color=color, alpha=0.15
+        )
 
-        variant_stats.append({
-            'name': name,
-            'post_mean': post_mean,
-            'prob': prob_non_inferior,
-            'n': n,
-            'x': x
-        })
+        variant_stats.append(
+            {
+                "name": name,
+                "post_mean": post_mean,
+                "prob": prob_non_inferior,
+                "n": n,
+                "x": x,
+            }
+        )
 
     # Add threshold line
-    ax.axvline(threshold, color='red', ls=':', lw=2.5,
-              label=f'Non-inferiority threshold = {threshold:.3f}')
+    ax.axvline(
+        threshold,
+        color="red",
+        ls=":",
+        lw=2.5,
+        label=f"Non-inferiority threshold = {threshold:.3f}",
+    )
 
     # Add control rate line if provided
     if control_rate is not None:
-        ax.axvline(control_rate, color='black', ls='-.', lw=2, alpha=0.7,
-                  label=f'Control rate = {control_rate:.3f}')
+        ax.axvline(
+            control_rate,
+            color="black",
+            ls="-.",
+            lw=2,
+            alpha=0.7,
+            label=f"Control rate = {control_rate:.3f}",
+        )
 
     # Title with epsilon if provided
     if epsilon is not None:
-        title = f'Weakly Informative Prior and Variant Posteriors\n(ε = {epsilon:.3f}, threshold = control - ε)'
+        title = f"Weakly Informative Prior and Variant Posteriors\n(ε = {epsilon:.3f}, threshold = control - ε)"
     else:
-        title = 'Weakly Informative Prior and Variant Posteriors'
+        title = "Weakly Informative Prior and Variant Posteriors"
 
-    ax.set_title(title, fontsize=14, fontweight='bold')
-    ax.set_xlabel('Conversion Rate', fontsize=12)
-    ax.set_ylabel('Probability Density', fontsize=12)
-    ax.grid(True, ls=':', alpha=0.3)
-    ax.legend(loc='upper left', fontsize=9, ncol=1)
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_xlabel("Conversion Rate", fontsize=12)
+    ax.set_ylabel("Probability Density", fontsize=12)
+    ax.grid(True, ls=":", alpha=0.3)
+    ax.legend(loc="upper left", fontsize=9, ncol=1)
 
     # Add text box with posterior probabilities
-    textstr = 'P(variant > threshold):\n'
+    textstr = "P(variant > threshold):\n"
     for stat in variant_stats:
-        status = '✓' if stat['prob'] >= 0.95 else '✗'
+        status = "✓" if stat["prob"] >= 0.95 else "✗"
         textstr += f"{status} {stat['name']}: {stat['prob']:.3f}\n"
 
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
-    ax.text(0.98, 0.97, textstr.strip(), transform=ax.transAxes,
-            fontsize=10, verticalalignment='top', horizontalalignment='right',
-            bbox=props, family='monospace')
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.8)
+    ax.text(
+        0.98,
+        0.97,
+        textstr.strip(),
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=props,
+        family="monospace",
+    )
 
     plt.tight_layout()
 
     return fig, ax
 
 
-def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rate, epsilon,
-                                       colors=None, x_range=None, figsize=(12, 6)):
+def plot_multiple_posteriors_comparison(
+    posteriors,
+    control_group_conversion_rate,
+    epsilon,
+    colors=None,
+    x_range=None,
+    figsize=(12, 6),
+):
     """
     Plot multiple posterior distributions for variant comparison.
 
@@ -803,13 +966,13 @@ def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rat
     """
     # Default colors if not provided
     if colors is None:
-        colors = {'A': '#1f77b4', 'B': '#ff7f0e', 'C': '#2ca02c'}
+        colors = {"A": "#1f77b4", "B": "#ff7f0e", "C": "#2ca02c"}
 
     # Auto-calculate x_range if not provided
     if x_range is None:
         # Find min and max across all credible intervals
-        all_ci_lower = [posteriors[name]['ci_95'][0] for name in posteriors.keys()]
-        all_ci_upper = [posteriors[name]['ci_95'][1] for name in posteriors.keys()]
+        all_ci_lower = [posteriors[name]["ci_95"][0] for name in posteriors.keys()]
+        all_ci_upper = [posteriors[name]["ci_95"][1] for name in posteriors.keys()]
         boundary = control_group_conversion_rate - epsilon
 
         # Include boundary and control rate in the range calculation
@@ -822,21 +985,20 @@ def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rat
 
     # Plot each variant
     for name in sorted(posteriors.keys()):
-        alpha_p = posteriors[name]['alpha']
-        beta_p = posteriors[name]['beta']
-        mean_p = posteriors[name]['mean']
-        ci_lower, ci_upper = posteriors[name]['ci_95']
+        alpha_p = posteriors[name]["alpha"]
+        beta_p = posteriors[name]["beta"]
+        mean_p = posteriors[name]["mean"]
+        ci_lower, ci_upper = posteriors[name]["ci_95"]
 
         # Get color (use default if variant not in colors dict)
-        color = colors.get(name, f'C{hash(name) % 10}')
+        color = colors.get(name, f"C{hash(name) % 10}")
 
         # Plot PDF
         pdf = beta_dist.pdf(x_range, alpha_p, beta_p)
-        ax.plot(x_range, pdf, color=color, lw=2.5,
-                label=f'{name}: mean={mean_p:.4f}')
+        ax.plot(x_range, pdf, color=color, lw=2.5, label=f"{name}: mean={mean_p:.4f}")
 
         # Mark the mean
-        ax.axvline(mean_p, color=color, ls='--', lw=1, alpha=0.5)
+        ax.axvline(mean_p, color=color, ls="--", lw=1, alpha=0.5)
 
         # Shade 95% credible interval
         mask = (x_range >= ci_lower) & (x_range <= ci_upper)
@@ -844,18 +1006,30 @@ def plot_multiple_posteriors_comparison(posteriors, control_group_conversion_rat
 
     # Add non-inferiority boundary
     boundary = control_group_conversion_rate - epsilon
-    ax.axvline(boundary, color='red', ls=':', lw=2,
-               label=f'Non-inferiority boundary ({boundary:.2f})')
+    ax.axvline(
+        boundary,
+        color="red",
+        ls=":",
+        lw=2,
+        label=f"Non-inferiority boundary ({boundary:.2f})",
+    )
 
     # Add control rate
-    ax.axvline(control_group_conversion_rate, color='black', ls=':', lw=2,
-               label=f'Control rate ({control_group_conversion_rate:.2f})')
+    ax.axvline(
+        control_group_conversion_rate,
+        color="black",
+        ls=":",
+        lw=2,
+        label=f"Control rate ({control_group_conversion_rate:.2f})",
+    )
 
-    ax.set_xlabel('Conversion Rate', fontsize=12)
-    ax.set_ylabel('Posterior Density', fontsize=12)
-    ax.set_title('Posterior Distributions for Variants A, B, C', fontsize=14, fontweight='bold')
-    ax.legend(loc='best', fontsize=10)
-    ax.grid(True, ls=':', alpha=0.3)
+    ax.set_xlabel("Conversion Rate", fontsize=12)
+    ax.set_ylabel("Posterior Density", fontsize=12)
+    ax.set_title(
+        "Posterior Distributions for Variants A, B, C", fontsize=14, fontweight="bold"
+    )
+    ax.legend(loc="best", fontsize=10)
+    ax.grid(True, ls=":", alpha=0.3)
     plt.tight_layout()
 
     return fig, ax
