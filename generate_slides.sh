@@ -4,15 +4,20 @@
 # Usage: ./generate_slides.sh
 # Output: presentation.slides.html (fully self-contained, images inlined)
 #
-# The plain nbconvert command still works for quick previews:
-#   jupyter nbconvert presentation.ipynb --to slides \
+# WHY --execute is required:
+#   nbstripout strips all cell outputs on every git operation, so the
+#   notebook on disk never has stored outputs. Without --execute, cells
+#   tagged remove-input show nothing (code hidden, output missing).
+#   --execute runs the notebook in a temporary kernel before converting,
+#   without modifying the .ipynb file on disk.
+#
+# Quick preview (images as external files, not self-contained):
+#   jupyter nbconvert presentation.ipynb --to slides --execute \
 #     --TagRemovePreprocessor.remove_input_tags='["remove-input"]'
-# That version references images as external files (not self-contained).
-# This script does the same then inlines all images as base64.
 
 set -e
 
-jupyter nbconvert presentation.ipynb --to slides \
+jupyter nbconvert presentation.ipynb --to slides --execute \
   --TagRemovePreprocessor.remove_input_tags='["remove-input"]'
 
 python3 << 'PYEOF'
