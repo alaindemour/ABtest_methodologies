@@ -7,15 +7,6 @@ A/B testing methodologies and statistical frameworks.
 **[View all rendered notebooks on GitHub Pages →](https://alaindemour.github.io/ABtest_methodologies/)**
 
 
-### Automated Rendering
-
-A GitHub Actions workflow automatically converts notebooks to HTML whenever changes are pushed to main:
-
-- **Published to:** GitHub Pages (`gh-pages` branch)
-- **URL:** `https://alaindemour.github.io/ABtest_methodologies/`
-- **Trigger:** Automatic on push to main/master when `.ipynb` files change
-- **Manual trigger:** Go to Actions tab → "Render Notebooks to HTML" → Run workflow
-
 ### Direct Notebook Links
 
 Once published, notebooks can be accessed at:
@@ -37,7 +28,17 @@ jupyter nbconvert --to html --output-dir rendered *.ipynb
 jupyter nbconvert --to html --output-dir rendered ABmethodologies.ipynb
 ```
 
+To produce the slide deck it relies on
+
 ```bash
 jupyter nbconvert presentation.ipynb --to slides
 jupyter nbconvert presentation.ipynb --to slides --TagRemovePreprocessor.remove_input_tags='["remove-input"]'
 ```
+
+but  this is better to actually have all the bells and whistles
+
+```
+./generate_slides.sh
+```
+
+
